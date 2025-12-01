@@ -124,7 +124,7 @@ cellule_vers_atome_json(a, 'a').
 
 % faits_prolog_vers_matrice_plateau(-MatricePlateau)
 % Lit les faits column/3 et construit une matrice 2D (liste de listes).
-% Les lignes sont du haut (index 0) vers le bas.
+% Leinit_board  lignes sont du haut (index 0) vers le bas.
 faits_prolog_vers_matrice_plateau(MatricePlateau) :-
     num_rows(NbLignes), num_cols(NbCols),
     findall(ListeLigne, (

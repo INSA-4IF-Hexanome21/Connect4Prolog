@@ -20,7 +20,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 convert_symbol('r', '🔴').
 convert_symbol('j', '🟡').
-convert_symbol('e', '.').   
+convert_symbol('e', '⬜').   
 convert_symbol(X, X).   
 
 %Afficher Le Plateau
@@ -33,15 +33,16 @@ display_board :-
             forall(between(1,7,Col),
                 (
                     column(Col, ColData,LastPos),
-                    nth1(Row, ColData, Cell),
+                    Pos is 7-Row,
+                    nth1(Pos, ColData, Cell),
                     convert_symbol(Cell, Symbol),
-                    write(Symbol), write(' ')
+                    write(Symbol), write('||')
                 )
             ),
             nl
         )
     ),
-    write('0 1 2 3 4 5 6'), nl, nl.
+    write('1   2   3   4   5   6   7   '), nl, nl.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------------   IA   -------------------------- 
@@ -65,8 +66,8 @@ playMove(Move, Player, NewCol) :-
     column(Move, ColData, LastPos),
     NewPos is LastPos +1,
     replace_nth1(ColData, NewPos, Player, NewColData),
-    retract(column(Move,Col,LastPos)),
-    assert(column(Move,NewCol,NewPos)).
+    retract(column(Move,ColData,LastPos)),
+    assert(column(Move,NewColData,NewPos)).
 
 replace_nth1(List, Index, Elem, NewList) :-
     nth1(Index, List, _, Rest),

@@ -107,29 +107,33 @@ rightDiagonalVictory(Player) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 convertSymbol('r', '🔴').
 convertSymbol('j', '🟡').
-convertSymbol('e', '.').   
-convertSymbol(X, X).     
+convert_symbol('e', '⬜').   
+convertSymbol(X, X). 
+convert_player(1, 'r').
+convert_player(2, 'j').     
 
 
 % Afficher le plateau
-displayBoard :-
+display_board :-
     nl,
-    % On parcourt les lignes de 1 (bas) à 6 (haut)
+    % On parcourt les lignes de 0 (haut) à 5 (bas)
     forall(between(1,6,Row),
         (
-            % Pour chaque colonne de 1 à 7
+            % Pour chaque colonne de 0 à 6
             forall(between(1,7,Col),
                 (
-                    column(Col, ColData, _),
-                    nth1(Row, ColData, Cell),
-                    convertSymbol(Cell, Symbol),
-                    write(Symbol), write(' ')
+                    column(Col, ColData,LastPos),
+                    Pos is 7-Row,
+                    nth1(Pos, ColData, Cell),
+                    convert_symbol(Cell, Symbol),
+                    write(Symbol), write('||')
                 )
             ),
             nl
         )
     ),
-    write('1 2 3 4 5 6 7'), nl, nl.
+    write('1   2   3   4   5   6   7   '), nl, nl.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------------   IA   -------------------------- 
@@ -150,14 +154,16 @@ ai(Move, _) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Créer un nouveau plateau avec un coup joué
+playMove(Move, Player, NewCol) :-
+    column(Move, ColData, LastPos),
+    NewPos is LastPos +1,
+    replace_nth1(ColData, NewPos, Player, NewColData),
+    retract(column(Move,ColData,LastPos)),
+    assert(column(Move,NewColData,NewPos)).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%% ---------------   MISE A JOUR DU PLATEAU   ------------ 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-updateBoard(Col,NewCol, X) :- 
-    retract(column(X,Col,_)),
-    assert(column(X,NewCol,_)).
+replace_nth1(List, Index, Elem, NewList) :-
+    nth1(Index, List, _, Rest),
+    nth1(Index, NewList, Elem, Rest).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   FIN DE PARTIE   --------------------- 
@@ -211,3 +217,8 @@ initBoard :-
         assert(column(Idx, EmptyCol,1))
     ),
     displayBoard.
+    random(1,3,Number),
+    writeln(Number),
+    convert_player(Number, Player),
+    write('First Player: '), writeln(Player).
+    %play(Player).

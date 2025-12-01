@@ -110,15 +110,42 @@ iaV2(Move,_) :-
     assert(column(1,['j','r','r','j','r','j'],6)),
     assert(column(2,['j','r','r','e','e','e'],3)),
     assert(column(3,['j','r','r','j','e','e'],4)),
-    assert(column(4,['j','r','r','j','r','e'],5)),
+    assert(column(4,['j','r','r','r','e','e'],5)),
     assert(column(5,['j','r','e','e','e','e'],2)),
     assert(column(6,['e','e','e','e','e','e'],0)),
     assert(column(7,['j','r','r','j','r','j'],6)),
     repeat,
-    random(1,8,Move),
+
+    (
+        (verifCol(Move),!)
+        %(verifRow(Move),!)
+    ;
+    (random(1,8,Move),
     column(Move,_,IndexMax),
     not(IndexMax == 6),
-    !.
+    !)
+    ).
+
+verifCol(Move) :- 
+    % Pour chaque colonne de 1 à 7
+    forall(between(1,7,Col),
+        (
+            column(Col, ColData,LastPos),
+            
+        )
+    ),
+
+    
+% VerifRow(Move) :-
+%     between(1, 6, Row),
+%     between(1, 4, StartCol),
+%     EndCol is StartCol + 3,
+%     forall(between(StartCol, EndCol, Col),
+%         (
+%             column(Col, ColData, _),
+%             nth1(Row, ColData, Player)
+%         )
+%     ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ------------------ JOUER UN COUP  --------------------- 

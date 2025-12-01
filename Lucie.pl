@@ -1,10 +1,49 @@
+/* :- use_module(library(http/thread_httpd)).
+:- use_module(library(http/http_dispatch)).
+:- use_module(library(http/html_write)).
+:- use_module(library(pce)).
+
+% Point d’entrée : démarrer le serveur sur le port 8080
+start :-
+    http_server(http_dispatch, [port(8080)]).
+
+% Associe l'URL "/" au prédicat index/1
+:- http_handler(root(.), index, []).
+
+% Associe l'URL "/click" au prédicat on_click/1
+:- http_handler(root(click), on_click, []).
+
+% Génère la page principale
+index(_Request) :-
+    reply_html_page(
+        title('Mini interface Prolog'),
+        [
+            h1('Ma mini-interface Web'),
+            p('Clique sur le bouton :'),
+            form([action('/click'), method('GET')],
+                 input([type(submit), value('Clique !')]))
+        ]).
+
+% Ce prédicat réagit au clic
+on_click(_Request) :-
+    writeln('bouton cliqué'),
+    reply_html_page(
+        title('Action'),
+        [
+            h2('Merci !'),
+            p('Le prédicat Prolog a bien été exécuté.'),
+            a([href('/')],'Retour')
+        ]).
+
+ */    
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% --------------------   VARIABLES   -------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- dynamic column/3. % column(Col, ColData, LastPos)
-num_rows(6).
-num_cols(7).
+:- dynamic column/3. %column(Col, ColData,LastPos)
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% --------------   CONDITIONS DE VICTOIRE   ------------- 
@@ -24,13 +63,11 @@ num_cols(7).
 convert_symbol('r', '🔴').
 convert_symbol('j', '🟡').
 convert_symbol('e', '.').   
-convert_symbol(X, X). 
-convert_player(1, 'r').
-convert_player(2, 'j').    
+convert_symbol(X, X).     
 
 
 %Afficher Le Plateau
-displayBoard :-
+display_board :-
     nl,
     % On parcourt les lignes de 1 (bas) à 6 (haut)
     forall(between(1,6,Row),
@@ -56,31 +93,74 @@ displayBoard :-
 %Trouver Le Meilleur Mouvement
 %Faire Un Mouvement Aleatoire
 ia(Move,_) :- 
-    % assert(column(1,['j','r','r','j','r','j']),6),
-    % assert(column(1,['j','r','r',A,B,C]),3),
-    % assert(column(1,['j','r','r','j',D,E]),4),
-    % assert(column(1,['j','r','r','j','r',F]),5),
-    % assert(column(1,['j','r',G,H,I,J]),2),
-    % assert(column(1,[K,L,M,N,O,P]),0),
+    assert(column(1,['j','r','r','j','r','j'],6)),
+    assert(column(2,['j','r','r','e','e','e'],3)),
+    assert(column(3,['j','r','r','j','e','e'],4)),
+    assert(column(4,['j','r','r','j','r','e'],5)),
+    assert(column(5,['j','r','e','e','e','e'],2)),
+    assert(column(6,['e','e','e','e','e','e'],0)),
+    assert(column(7,['j','r','r','j','r','j'],6)),
     repeat,
-    random(1,7,Move),
+    random(1,8,Move),
     column(Move,_,IndexMax),
     not(IndexMax == 6),
     !.
+
+iaV2(Move,_) :-
+    assert(column(1,['j','r','r','j','r','j'],6)),
+    assert(column(2,['j','r','r','e','e','e'],3)),
+    assert(column(3,['j','r','r','j','e','e'],4)),
+    assert(column(4,['j','r','r','r','e','e'],5)),
+    assert(column(5,['j','r','e','e','e','e'],2)),
+    assert(column(6,['e','e','e','e','e','e'],0)),
+    assert(column(7,['j','r','r','j','r','j'],6)),
+    repeat,
+
+    (
+        (verifCol(Move),!);
+        (verifRow(Move),!)
+    ),
+    random(1,8,Move),
+    column(Move,_,IndexMax),
+    not(IndexMax == 6),
+    !.
+
+verifCol(Move).
+
+    
+VerifRow(Move) :-
+    between(1, 6, Row),
+    between(1, 4, StartCol),
+    EndCol is StartCol + 2,
+    forall(between(StartCol, EndCol, Col),
+        (
+            column(Col, ColData, _),
+            nth1(Row, ColData, X)
+        )
+    ).
+VerifRow(Move) :-
+    forall(between(1,6,Row),
+        (
+            column(Col, ColData, LastPos),
+            nth1(Row, ColData, Cell),
+            convert_symbol(Cell, Symbol),
+            write(Symbol), write(' ')
+        )
+    ),
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ------------------ JOUER UN COUP  --------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%play_move(Move,Player) :-
-%    .
+%Creer Un Nouveau Plateau Avec Le Nouveau Mouv
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   MISE A JOUR DU PLATEAU   ------------ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Mettre A Jour Le Plateau Original
-applyIt(Col,NewCol, X) :- 
+maj_plateau(Col,NewCol, X) :- 
     retract(column(X,Col,_)),
     assert(column(X,NewCol,_)).
 
@@ -96,13 +176,12 @@ applyIt(Col,NewCol, X) :-
 
 % Appeler avant de changer de joueur
 
-isEndgame(Player) :-
-    (
-        victoire_horizontale(Player);
-        victoire_verticale(Player);
-        victoire_diagonale_gauche(Player);
-        victoire_diagonale_droite(Player);
-        match_nul()
+detecter_fin(Player) :-
+    (   victoire_horizontale(Player)
+    ;   victoire_verticale(Player)
+    ;   victoire_diagonale_gauche(Player)
+    ;   victoire_diagonale_droite(Player)
+    ;   match_nul()
     ).
 
 victoire_horizontale(Player) :-
@@ -156,16 +235,15 @@ nextPlayer('r','j').
 %%%% ---------------   BOUCLE DE JEU   -------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-play(Player) :- detecter_fin(Player).
+jouer(Player) :- detecter_fin(Player).
 
-play(Player) :- 
+jouer(Player) :- 
     write('New turn for:'), writeln(Player),
-    ia(Move,Player),                    %Appel l'IA pour un mouvement
-    %playMpve                           %réalise le mouvement 
-    %%mapplyIt(Col,NewCol, X),       
-    isEndGame(Player),
+    ia(Move,Player),
+    %playMpve
+    %%maj_plateau(Col,NewCol, X),
     nextPlayer(Player,NextPlayer),
-    displayBoard,
+    display_board,
     jouer(NextPlayer).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -176,15 +254,9 @@ init_board :-
     retractall(column(_,_,_)),
     length(EmptyCol, 6), maplist(=('e'), EmptyCol),
     forall(between(1,7,Idx),
-        assert(column(Idx, EmptyCol,0))
+        assert(column(Idx, EmptyCol,1))
     ),
-    displayBoard,
-    random(1,3,Number),
-    writeln(Number),
-    convert_player(Number, Player),
-    write('First Player: '), writeln(Player).
-    %play(Player).
-    
+    display_board.
 
 
 
