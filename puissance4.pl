@@ -1,4 +1,4 @@
-:- consult('features/ai/ai.pl').
+:- consult('features/ia/ai.pl').
 :- consult('features/affichage/affichage.pl').
 :- consult('features/coup/coup.pl').
 :- consult('features/fin/fin.pl').
@@ -7,6 +7,10 @@
 :- consult('features/joueur/joueur.pl').
 
 :- dynamic column/3. % column(Col, ColData, LastPos)
+:- dynamic player/2.
+:- dynamic playerJ/2.
+:- dynamic playerR/2.
+:- dynamic currentPlayer/1.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------------   IA   -------------------------- 
@@ -33,7 +37,8 @@ askPlayerMove(Move,_) :-
 %%%% ---------------   BOUCLE DE JEU   -------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-play(Current, PlayerJ, PlayerR) :-
+play :-
+    currentPlayer(Current),
     Current = player(Color,Type),
     write('New turn for: '), writeln(Color),
 
@@ -49,8 +54,8 @@ play(Current, PlayerJ, PlayerR) :-
     (   isOver(Color, Move) -> 
         true % on stoppe le jeu
     ;
-        nextPlayer(Current,PlayerJ, PlayerR, NextPlayer),
-        play(NextPlayer, PlayerJ, PlayerR)  % on continue de jouer
+        nextPlayer,
+        play  % on continue de jouer
     ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -71,9 +76,9 @@ initBoard :-
     forall(between(1,7,Idx),
         assert(column(Idx, EmptyCol,0))
     ),
-    random(1, 3, Numero),
-    writeln(Numero),
-    convertir_joueur(Numero, Joueur),
+    initPlayer(PlayerR, PlayerJ),
+    displayBoard,
+    play.
 
 initPlayer(PlayerR, PlayerJ) :-
     writeln('--- Red Player (RED) ---'),
@@ -85,8 +90,17 @@ initPlayer(PlayerR, PlayerJ) :-
     nl, write('Yellow Player is '), writeln(TypeJ),
 
     PlayerR = player('RED',TypeR),
-    PlayerJ = player('YELLOW',TypeJ).
+    assert(playerR('RED', TypeR)),
+    PlayerJ = player('YELLOW',TypeJ),
+    assert(playerJ('YELLOW',TypeJ)),
+    write('Player J initialized as: '), writeln(PlayerJ),
+    write('Player R initialized as: '), writeln(PlayerR),
 
-initPlay(PlayerR, PlayerJ):- 
-    play(PlayerJ, PlayerJ, PlayerR).
+    random(1,3, Num),
+    (   Num =:= 1 ->
+        assert(currentPlayer(PlayerJ))
+    ;    
+        assert(currentPlayer(PlayerR))
+    ).
+
 

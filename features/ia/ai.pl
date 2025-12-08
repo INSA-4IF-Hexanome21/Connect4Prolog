@@ -61,7 +61,7 @@ ia_choisir_coup(Joueur, Mouvement) :-
 % Si Negamax renvoie tout "invalide" (colonne pleine ou bug), on joue aléatoire
 ia_choisir_coup(_, Mouvement) :-
     writeln('Negamax n\'a rien trouve, coup aleatoire.'),
-    ia_aleatoire(Mouvement).
+    aiV1(Mouvement,_).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   UTILITAIRES   ----------------------- 
