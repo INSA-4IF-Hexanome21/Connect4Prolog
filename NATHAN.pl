@@ -4,6 +4,8 @@
 
 :- dynamic column/3.
 :- dynamic player/2.
+:- dynamic playerJ/2.
+:- dynamic playerR/2.
 :- dynamic currentPlayer/1.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -67,9 +69,12 @@ rightDiagonalVictory(Player) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% --------------   AFFICHAGE DU PLATEAU   --------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-convert_symbol('RED', '🔴').
+/* convert_symbol('RED', '🔴').
 convert_symbol('YELLOW', '🟡').
-convert_symbol('e', '⬜').   
+convert_symbol('e', '⬜').    */
+convert_symbol('RED', 'R').
+convert_symbol('YELLOW', 'J').
+convert_symbol('e', '-').   
 convert_symbol(X, X).   
 
 %Afficher Le Plateau
@@ -160,12 +165,15 @@ isTie() :-
 
 nextPlayer :-
     currentPlayer(Current),
-    Current = player(Color, _),
-    ( Color = 'RED' -> player('YELLOW', Next)
-    ; Color = 'YELLOW' -> player('RED', Next)
+    (   playerJ(ColorJ, TypeJ), Current = player(ColorJ, TypeJ) -> 
+        playerR(ColorR, TypeR),
+        NextPlayer = player(ColorR, TypeR)
+    ; 
+        playerJ(ColorJ, TypeJ),
+        NextPlayer = player(ColorJ, TypeJ)
     ),
     retract(currentPlayer(Current)),
-    assert(currentPlayer(Next)).
+    assert(currentPlayer(NextPlayer)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   BOUCLE DE JEU   -------------------- 
@@ -221,11 +229,18 @@ initPlayer(PlayerR, PlayerJ) :-
     nl, write('Yellow Player is '), writeln(TypeJ),
 
     PlayerR = player('RED',TypeR),
-    assert(player('RED', TypeR)),
+    assert(playerR('RED', TypeR)),
     PlayerJ = player('YELLOW',TypeJ),
-    assert(player('YELLOW',TypeJ)),
+    assert(playerJ('YELLOW',TypeJ)),
+    write('Player J initialized as: '), writeln(PlayerJ),
+    write('Player R initialized as: '), writeln(PlayerR),
 
-    assert(currentPlayer(PlayerR)).
+    random(1,3, Num),
+    (   Num =:= 1 ->
+        assert(currentPlayer(PlayerJ))
+    ;    
+        assert(currentPlayer(PlayerR))
+    ).
 
     
 
