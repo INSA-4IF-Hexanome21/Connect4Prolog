@@ -1,7 +1,20 @@
-/* :- use_module(library(http/thread_httpd)).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% ---------------------   IMPORTS   ---------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Module d'interface de l'IA
+%:- consult('ai.pl').
+% Les gars, essayez d'importer vos modules au lieu de travailler ici ;)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% --------------------   IHM   -------------------- 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/html_write)).
-:- use_module(library(pce)).
+:- use_module(library(lists)).
+%:- use_module(library(pce)).
 
 % Point d’entrée : démarrer le serveur sur le port 8080
 start :-
@@ -26,7 +39,6 @@ index(_Request) :-
 
 % Ce prédicat réagit au clic
 on_click(_Request) :-
-    writeln('bouton cliqué'),
     reply_html_page(
         title('Action'),
         [
@@ -35,228 +47,311 @@ on_click(_Request) :-
             a([href('/')],'Retour')
         ]).
 
- */    
+:- module(swi_demo, []).
+
+      :- initialization(run).
+
+      run :-
+        Button := document.createElement("button"),
+        Button.innerHTML := "click",
+	_ := document.getElementById("swi-demo").appendChild(Button),
+      bind(Button, click, _Ev, test(Button)).
+
+      test(Button) :-
+        Text := Button.innerHTML,
+        string_concat(Text, " and again", NewText),
+        Button.innerHTML := NewText.
+   
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% --------------------   VARIABLES   -------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- dynamic column/3. %column(Col, ColData,LastPos)
-
+:- dynamic column/3. % column(Col, ColData, LastPos)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% --------------   CONDITIONS DE VICTOIRE   ------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	
-%Detecter Victoire
-%Detecter Victoire Horizontale
-%Detecter Victoire Verticale
-%Detecter Victoire Diagonale ↖
-%Detecter Victoire Diagonale ↗
 
-% En cours en bas…
+% Versions optimisées
+
+% Détecter une victoire horizontale
+horizontalVictory(Player, Column) :-
+    column(Column, _, Row),
+    between(0, 3, Offset),
+    StartCol is Column - Offset,
+    StartCol >= 1,
+    EndCol is StartCol + 3,
+    EndCol =< 7,
+    forall(between(StartCol, EndCol, Col),
+        (
+            column(Col, ColData, _),
+            nth1(Row, ColData, Player) % ColData[Row - 1] == Player
+        )
+    ),
+    !.
+
+% Détecter une victoire verticale
+verticalVictory(Player, Column) :-
+    column(Column, ColData, Row),
+    between(0, 3, Offset),
+    StartRow is Row - Offset,
+    StartRow >= 1,
+    EndRow is StartRow + 3,
+    EndRow =< 6,
+    forall(between(StartRow, EndRow, R),
+        (
+            nth1(R, ColData, Player)
+        )
+    ),
+    !.
+
+% Détecter une victoire diagonale ↗
+rightDiagonalVictory(Player, Column) :-
+    column(Column, _, Row),
+    between(0, 3, Offset),
+    StartRow is Row - Offset,
+    StartCol is Column - Offset,
+    StartRow >= 1,
+    StartCol >= 1,
+    EndRow is StartRow + 3,
+    EndCol is StartCol + 3,
+    EndRow =< 6,
+    EndCol =< 7,
+    forall(between(0, 3, I),
+        (
+            R is StartRow + I,
+            C is StartCol + I,
+            column(C, ColData, _),
+            nth1(R, ColData, Player)
+        )
+    ),
+    !.
+
+% Détecter une victoire diagonale ↖
+leftDiagonalVictory(Player, Column) :-
+    column(Column, _, Row),
+    between(0, 3, Offset),
+    StartRow is Row - Offset,
+    StartCol is Column + Offset,
+    StartRow >= 1,
+    StartCol =< 7,
+    EndRow is StartRow + 3,
+    EndCol is StartCol - 3,
+    EndRow =< 6,
+    EndCol >= 1,
+    forall(between(0, 3, I),
+        (
+            R is StartRow + I,
+            C is StartCol - I,
+            column(C, ColData, _),
+            nth1(R, ColData, Player)
+        )
+    ),
+    !.
+
+% Versions non optimisées
+
+% Détecter une victoire horizontale
+% horizontalVictory(Player) :-
+%     between(1, 6, Row),
+%     between(1, 4, StartCol),
+%     EndCol is StartCol + 3,
+%     forall(between(StartCol, EndCol, Col),
+%         (
+%             column(Col, ColData, _),
+%             nth1(Row, ColData, Player)
+%         )
+%     ).
+
+% Détecter une victoire verticale
+% verticalVictory(Player) :-
+%     between(1, 7, Col),
+%     column(Col, ColData, _),
+%     between(1, 3, StartRow),
+%     EndRow is StartRow + 3,
+%     forall(between(StartRow, EndRow, Row),
+%         (
+%             nth1(Row, ColData, Player)
+%         )
+%     ).
+
+% Détecter une victoire diagonale ↗
+% rightDiagonalVictory(Player) :-
+%     between(1, 3, StartRow),
+%     between(1, 4, StartCol),
+%     forall(between(0, 3, Offset),
+%         (
+%             Row is StartRow + Offset,
+%             Col is StartCol + Offset,
+%             column(Col, ColData, _),
+%             nth1(Row, ColData, Player)
+%         )
+%     ).
+
+% Détecter une victoire diagonale ↖
+% leftDiagonalVictory(Player) :-
+%     between(1, 3, StartRow),
+%     between(4, 7, StartCol),
+%     forall(between(0, 3, Offset),
+%         (
+%             Row is StartRow + Offset,
+%             Col is StartCol - Offset,
+%             column(Col, ColData, _),
+%             nth1(Row, ColData, Player)
+%         )
+%     ).
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% --------------   AFFICHAGE DU PLATEAU   --------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-convert_symbol('r', '🔴').
-convert_symbol('j', '🟡').
-convert_symbol('e', '.').   
-convert_symbol(X, X).     
+convertSymbol('RED', '🔴').
+convertSymbol('YELLOW', '🟡').
+convertSymbol('e', '⬜').   
+convertSymbol(X, X). 
+convertPlayer(1, 'RED').
+convertPlayer(2, 'YELLOW').     
 
 
-%Afficher Le Plateau
-display_board :-
+% Afficher le plateau
+displayBoard :-
     nl,
-    % On parcourt les lignes de 1 (bas) à 6 (haut)
+    % On parcourt les lignes de 0 (haut) à 5 (bas)
     forall(between(1,6,Row),
         (
-            % Pour chaque colonne de 1 à 7
+            % Pour chaque colonne de 0 à 6
             forall(between(1,7,Col),
                 (
                     column(Col, ColData,LastPos),
-                    nth1(Row, ColData, Cell),
-                    convert_symbol(Cell, Symbol),
-                    write(Symbol), write(' ')
+                    Pos is 7-Row,
+                    nth1(Pos, ColData, Cell),
+                    convertSymbol(Cell, Symbol),
+                    write(Symbol), write('||')
                 )
             ),
             nl
         )
     ),
-    write('1 2 3 4 5 6 7'), nl, nl.
+    write('1   2   3   4   5   6   7   '), nl, nl.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------------   IA   -------------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Trouver Le Meilleur Mouvement
-%Faire Un Mouvement Aleatoire
-ia(Move,_) :- 
-    assert(column(1,['j','r','r','j','r','j'],6)),
-    assert(column(2,['j','r','r','e','e','e'],3)),
-    assert(column(3,['j','r','r','j','e','e'],4)),
-    assert(column(4,['j','r','r','j','r','e'],5)),
-    assert(column(5,['j','r','e','e','e','e'],2)),
-    assert(column(6,['e','e','e','e','e','e'],0)),
-    assert(column(7,['j','r','r','j','r','j'],6)),
+% Trouver le meilleur mouvement
+% Faire un mouvement aléatoire
+ai(Move, _) :- 
+    assert(column(1,['j',''])),
     repeat,
-    random(1,8,Move),
-    column(Move,_,IndexMax),
+    random(1,7,Move),
+    column(Move, _, IndexMax),
     not(IndexMax == 6),
     !.
-
-iaV2(Move,_) :-
-    assert(column(1,['j','r','r','j','r','j'],6)),
-    assert(column(2,['j','r','r','e','e','e'],3)),
-    assert(column(3,['j','r','r','j','e','e'],4)),
-    assert(column(4,['j','r','r','r','e','e'],5)),
-    assert(column(5,['j','r','e','e','e','e'],2)),
-    assert(column(6,['e','e','e','e','e','e'],0)),
-    assert(column(7,['j','r','r','j','r','j'],6)),
-    repeat,
-
-    (
-        (verifCol(Move),!);
-        (verifRow(Move),!)
-    ),
-    random(1,8,Move),
-    column(Move,_,IndexMax),
-    not(IndexMax == 6),
-    !.
-
-verifCol(Move).
-
-    
-VerifRow(Move) :-
-    between(1, 6, Row),
-    between(1, 4, StartCol),
-    EndCol is StartCol + 2,
-    forall(between(StartCol, EndCol, Col),
-        (
-            column(Col, ColData, _),
-            nth1(Row, ColData, X)
-        )
-    ).
-VerifRow(Move) :-
-    forall(between(1,6,Row),
-        (
-            column(Col, ColData, LastPos),
-            nth1(Row, ColData, Cell),
-            convert_symbol(Cell, Symbol),
-            write(Symbol), write(' ')
-        )
-    ),
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ------------------ JOUER UN COUP  --------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Creer Un Nouveau Plateau Avec Le Nouveau Mouv
+% Créer un nouveau plateau avec un coup joué
+playMove(Move, Player, NewCol) :-
+    column(Move, ColData, LastPos),
+    NewPos is LastPos +1,
+    replace_nth1(ColData, NewPos, Player, NewColData),
+    retract(column(Move,ColData,LastPos)),
+    assert(column(Move,NewColData,NewPos)).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%% ---------------   MISE A JOUR DU PLATEAU   ------------ 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%Mettre A Jour Le Plateau Original
-maj_plateau(Col,NewCol, X) :- 
-    retract(column(X,Col,_)),
-    assert(column(X,NewCol,_)).
-
+replace_nth1(List, Index, Elem, NewList) :-
+    nth1(Index, List, _, Rest),
+    nth1(Index, NewList, Elem, Rest).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   FIN DE PARTIE   --------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Detecter Si Victoire Ou Egalite Et Afficher Gagnant
-% Detecter Si Le Joueur Courrant A Gagner
-% Dtetecter Si Le Joueur Ennemi A Gagner
-% Detecter Une Egalite
-
 % Appeler avant de changer de joueur
 
-detecter_fin(Player) :-
-    (   victoire_horizontale(Player)
-    ;   victoire_verticale(Player)
-    ;   victoire_diagonale_gauche(Player)
-    ;   victoire_diagonale_droite(Player)
-    ;   match_nul()
-    ).
+isOver(Player, Column) :-
+    (   horizontalVictory(Player, Column)
+    ;   verticalVictory(Player, Column)
+    ;   leftDiagonalVictory(Player, Column)
+    ;   rightDiagonalVictory(Player, Column)
+    ),
+    !,
+    write(Player), writeln(' has won the match !').
 
-victoire_horizontale(Player) :-
-    between(1, 6, Row),
-    between(1, 4, StartCol),
-    EndCol is StartCol + 3,
-    forall(between(StartCol, EndCol, Col),
-        (
-            column(Col, ColData, _),
-            nth1(Row, ColData, Player)
-        )
-    ).
+isOver(_, _) :-
+    isTie(),
+    writeln('It\'s a tie !').
 
-victoire_verticale(Player) :-
-    between(1, 7, Col),
-    column(Col, ColData, _),
-    between(1, 3, StartRow),
-    EndRow is StartRow + 3,
-    forall(between(StartRow, EndRow, Row),
-        (
-            nth1(Row, ColData, Player)
-        )
-    ).
-
-victoire_diagonale_gauche(Player) :-
-    between(1, 3, StartRow),
-    between(1, 4, StartCol),
-    EndRow is StartRow + 3,
-    EndCol is StartCol + 3,
-    forall(between(0, 3, Offset),
-        (
-            Row is StartRow + Offset,
-            Col is StartCol + Offset,
-            column(Col, ColData, _),
-            nth1(Row, ColData, Player)
-        )
-    ).
-
-victoire_diagonale_droite(Player).
-
-match_nul().
+isTie() :-
+    \+ (column(_, _, LastPos), LastPos =< 6).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   CHANGER DE JOUEUR   ---------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-nextPlayer('j','r').
-nextPlayer('r','j').
+nextPlayer(player('RED', TR), player('YELLOW', TY)).
+nextPlayer(player('YELLOW', TY), player('RED', TR)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   BOUCLE DE JEU   -------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-jouer(Player) :- detecter_fin(Player).
+play(Player) :-
+    Player = player(Color,Type),
+    write('New turn for: '), writeln(Color),
 
-jouer(Player) :- 
-    write('New turn for:'), writeln(Player),
-    ia(Move,Player),
-    %playMpve
-    %%maj_plateau(Col,NewCol, X),
-    nextPlayer(Player,NextPlayer),
-    display_board,
-    jouer(NextPlayer).
+    (Type == 'ai' -> 
+        ai(Move,Player) %Appel l'IA pour un mouvement
+    ;
+        nl%to implement
+    ),   
+
+    displayBoard,
+    playMove(Move, Color, NewCol),   
+
+    (   isOver(Color, Move) -> 
+        true % on stoppe le jeu
+    ;
+        nextPlayer(Player,NextPlayer),
+        play(NextPlayer) % on continue de jouer
+    ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   INITIALISATION   ------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-init_board :-
+selectPlayerType(Type) :-
+    writeln('1 - ai  '),
+    writeln('2 - player '),
+    read(Entry),
+    (   Entry =:= 1 -> Type = 'ai'
+    ;   Entry =:= 2 -> Type = 'human'
+    ;   writeln('Invalid option.'), fail
+    ).
+
+initBoard :-
     retractall(column(_,_,_)),
     length(EmptyCol, 6), maplist(=('e'), EmptyCol),
     forall(between(1,7,Idx),
-        assert(column(Idx, EmptyCol,1))
+        assert(column(Idx, EmptyCol,0))
     ),
-    display_board.
+    initPlayer(PlayerR, PlayerJ),
+    initPlay(PlayerR, PlayerJ),
+    displayBoard.
 
+initPlayer(PlayerR, PlayerJ) :-
+    writeln('--- Red Player (RED) ---'),
+    selectPlayerType(TypeR),
+    nl, write('Red Player is '), writeln(TypeR),
 
+    writeln('--- Yellow Player (YELLOW) ---'),
+    selectPlayerType(TypeJ),
+    nl, write('Yellow Player is '), writeln(TypeJ),
 
+    PlayerR = player('RED',TypeR),
+    PlayerJ = player('YELLOW',TypeJ).
+
+initPlay(PlayerR, PlayerJ):- 
+    play(PlayerR).

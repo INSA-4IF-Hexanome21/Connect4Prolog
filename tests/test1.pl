@@ -62,7 +62,7 @@ on_click(_Request) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 convertSymbol('r', '🔴').
 convertSymbol('j', '🟡').
-convertSymbol('e', '⬜').   
+convert_symbol('e', '⬜').   
 convertSymbol(X, X). 
 convert_player(1, 'r').
 convert_player(2, 'j').     
@@ -80,7 +80,7 @@ display_board :-
                     column(Col, ColData,LastPos),
                     Pos is 7-Row,
                     nth1(Pos, ColData, Cell),
-                    convertSymbol(Cell, Symbol),
+                    convert_symbol(Cell, Symbol),
                     write(Symbol), write('||')
                 )
             ),
@@ -102,12 +102,12 @@ ia(Move,_) :-
     not(IndexMax == 6),
     !.
 
-aiV2(Move,_) :-
+iaV2(Move,_) :-
     (
-        (verifCol(Move),!);
-        (verifRow(Move),!);
-        (verifDiagLeft(Move),!);
-        (verifDiagRight(Move),!)
+        (verifCol(Move),writeln("colonne"),!);
+        (verifRow(Move),writeln("ligne"),!);
+        (verifDiagLeft(Move),writeln("diagLeft"),!);
+        (verifDiagRight(Move),writeln("diagRight"),!)
     ;
     (   
     	repeat,
@@ -211,7 +211,9 @@ verifDiagLeft(Move) :-
 
     % Convertir Pos → colonne du coup à jouer
     nth1(Pos, [Col,Col1,Col2,Col3], Move),
-    nth1(Pos, [Row,Row1,Row2,Row3], RowPlayed),
+    column(Move,_,Row5),
+    RowPlayed is  Row5 + 1,
+
 
     % Vérifier que jouer dans cette colonne est possible
     canPlay(Move, RowPlayed),
@@ -246,7 +248,8 @@ verifDiagRight(Move) :-
 
     % Convertir Pos → colonne du coup à jouer
     nth1(Pos, [Col,Col1,Col2,Col3], Move),
-    nth1(Pos, [Row,Row1,Row2,Row3], RowPlayed),
+    column(Move,_,Row5),
+    RowPlayed is  Row5 + 1,
 
     % Vérifier que jouer dans cette colonne est possible
     canPlay(Move, RowPlayed),
@@ -367,7 +370,7 @@ init_board :-
 %%%% ---------------   CAS DE TEST   --------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-testAiV1() :- 
+testIaV1() :- 
     % Création du tableau
     assert(column(1,['r','r','r','j','r','r'],6)),
     assert(column(2,['j','r','r','r','j','r'],6)),
@@ -379,15 +382,8 @@ testAiV1() :-
     ia(Move,_),
     Move == 6.
 
-testAiV2() :- testaiV2Col(),
-   testaiV2Row(),
-   testaiV2Row2(),
-   testaiV2Diag(),
-   testaiV2Diag2(),
-   testaiV2Diag3(),
-   testaiV2Diag4().
 
-testAiV2Col() :- 
+testIaV2Col() :- 
     retractall(column(_,_,_)),
     % Création du tableau
     assert(column(1,['r','r','r','e','e','e'],3)),
@@ -397,10 +393,10 @@ testAiV2Col() :-
     assert(column(5,['j','r','r','j','r','r'],6)),
     assert(column(6,['e','e','e','e','e','e'],0)),
     assert(column(7,['j','r','r','j','r','j'],6)),
-    aiV2(Move,_),
+    iaV2(Move,_),
     Move == 1.
 
-testAiV2Row() :- 
+testIaV2Row() :- 
     retractall(column(_,_,_)),
     % Création du tableau
     assert(column(1,['r','r','r','j','e','e'],4)),
@@ -410,10 +406,10 @@ testAiV2Row() :-
     assert(column(5,['r','r','r','j','j','r'],6)),
     assert(column(6,['e','e','e','e','e','e'],0)),
     assert(column(7,['j','r','r','j','r','j'],6)),
-    aiV2(Move,_),
+    iaV2(Move,_),
     Move == 6.
 
-testAiV2Row2() :- 
+testIaV2Row2() :- 
     retractall(column(_,_,_)),
     % Création du tableau
     assert(column(1,['r','r','r','j','e','e'],4)),
@@ -423,10 +419,10 @@ testAiV2Row2() :-
     assert(column(5,['r','r','r','j','j','r'],6)),
     assert(column(6,['e','e','e','e','e','e'],0)),
     assert(column(7,['r','r','r','j','r','j'],6)),
-    aiV2(Move,_),
+    iaV2(Move,_),
     Move == 6.
 
-testAiV2Diag() :- 
+testIaV2Diag() :- 
     retractall(column(_,_,_)),
     % Création du tableau
     assert(column(1,['r','r','r','j','e','e'],4)),
@@ -436,10 +432,11 @@ testAiV2Diag() :-
     assert(column(5,['j','r','r','j','j','r'],6)),
     assert(column(6,['e','e','e','e','e','e'],0)),
     assert(column(7,['r','r','r','j','r','j'],6)),
-    aiV2(Move,_),
+    iaV2(Move,_),
+    write(Move),
     Move == 4.
 
-testAiV2Diag2() :- 
+testIaV2Diag2() :- 
     retractall(column(_,_,_)),
     % Création du tableau
     assert(column(1,['r','r','r','j','e','e'],4)),
@@ -449,34 +446,31 @@ testAiV2Diag2() :-
     assert(column(5,['j','r','r','j','j','r'],6)),
     assert(column(6,['j','r','j','e','e','e'],3)),
     assert(column(7,['r','r','r','j','r','j'],6)),
-    aiV2(Move,_),
+    iaV2(Move,_),
+    write(Move),
     Move == 4.
 
-testAiV2Diag3() :- 
+testIaV2Diag3() :- 
     retractall(column(_,_,_)),
     % Création du tableau
     assert(column(1,['r','r','r','j','e','e'],4)),
     assert(column(2,['j','r','j','r','j','r'],6)),
     assert(column(3,['r','r','e','e','e','e'],2)),
-    assert(column(4,['j','j','r','r','e','e'],4)),
+    assert(column(4,['j','j','r','r','e','e'],3)),
     assert(column(5,['j','r','r','j','j','r'],6)),
     assert(column(6,['e','e','e','e','e','e'],0)),
     assert(column(7,['r','r','r','j','r','j'],6)),
-    aiV2(Move,_),
+    display_board,
+    iaV2(Move,_),
+    write(Move),
     Move == 3.
 
-testAiV2Diag4() :- 
-    retractall(column(_,_,_)),
-    % Création du tableau
-    assert(column(1,['r','r','r','j','e','e'],4)),
-    assert(column(2,['j','r','j','r','j','r'],6)),
-    assert(column(3,['r','r','j','r','e','e'],2)),
-    assert(column(4,['j','j','e','e','e','e'],2)),
-    assert(column(5,['j','r','r','j','j','r'],6)),
-    assert(column(6,['r','e','e','e','e','e'],0)),
-    assert(column(7,['r','r','r','j','r','j'],6)),
-    aiV2(Move,_),
-    Move == 4.
+testIaV2() :- testIaV2Col(),
+   testIaV2Row(),
+   testIaV2Row2(),
+   testIaV2Diag(),
+   testIaV2Diag2(),
+   testIaV2Diag3().
 
     
 

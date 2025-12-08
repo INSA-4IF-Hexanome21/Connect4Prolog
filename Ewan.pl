@@ -1,4 +1,4 @@
-:- consult('features/ai/ai.pl').
+:- consult('ai.pl').
 :- consult('features/affichage/affichage.pl').
 :- consult('features/coup/coup.pl').
 :- consult('features/fin/fin.pl').
