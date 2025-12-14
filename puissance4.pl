@@ -42,14 +42,21 @@ play :-
     Current = player(Color,Type),
     write('New turn for: '), writeln(Color),
 
-    (   Type == 'ai' -> 
+    (   Type == 'aiMinMax' -> 
         ai(Move,Current) %Appel l'IA pour un mouvement
+    ;
+        Type == 'aiRand' -> 
+        aiV1(Move,Current) %Appel l'IA pour un mouvement
+    ;
+        Type == 'aiV2' -> 
+        aiV2(Move,Current) %Appel l'IA pour un mouvement
     ;
         askPlayerMove(Move,Current) %Appel le joueur pour un mouvement
     ),   
 
-    displayBoard,
-    playMove(Move, Color, NewCol),   
+    
+    playMove(Move, Color, NewCol),  
+    displayBoard, 
 
     (   isOver(Color, Move) -> 
         true % on stoppe le jeu
@@ -62,11 +69,15 @@ play :-
 %%%% ---------------   INITIALISATION   ------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 selectPlayerType(Type) :-
-    writeln('1 - ai  '),
-    writeln('2 - player '),
+    writeln('1 - aiRand  '),
+    writeln('2 - aiV2  '),
+    writeln('3 - aiMinMax  '),
+    writeln('4 - player '),
     read(Entry),
-    (   Entry =:= 1 -> Type = 'ai'
-    ;   Entry =:= 2 -> Type = 'human'
+    (   Entry =:= 1 -> Type = 'aiRand'
+    ;   Entry =:= 2 -> Type = 'aiV2'
+    ;   Entry =:= 3 -> Type = 'aiMinMax'
+    ;   Entry =:= 4 -> Type = 'human'
     ;   writeln('Invalid option.'), fail
     ).
 
@@ -81,18 +92,21 @@ initBoard :-
     play.
 
 initPlayer(PlayerR, PlayerJ) :-
-    writeln('--- Red Player (RED) ---'),
+    retractall(playerR(_, _)),
+    retractall(playerJ(_, _)),
+    retractall(currentPlayer(_)),
+    writeln('--- Red Player (R) ---'),
     selectPlayerType(TypeR),
     nl, write('Red Player is '), writeln(TypeR),
 
-    writeln('--- Yellow Player (YELLOW) ---'),
+    writeln('--- Yellow Player (Y) ---'),
     selectPlayerType(TypeJ),
     nl, write('Yellow Player is '), writeln(TypeJ),
 
-    PlayerR = player('RED',TypeR),
-    assert(playerR('RED', TypeR)),
-    PlayerJ = player('YELLOW',TypeJ),
-    assert(playerJ('YELLOW',TypeJ)),
+    PlayerR = player('R',TypeR),
+    assert(playerR('R', TypeR)),
+    PlayerJ = player('Y',TypeJ),
+    assert(playerJ('Y',TypeJ)),
     write('Player J initialized as: '), writeln(PlayerJ),
     write('Player R initialized as: '), writeln(PlayerR),
 

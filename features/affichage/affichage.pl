@@ -1,9 +1,9 @@
-convertSymbol('RED', '🔴').
-convertSymbol('YELLOW', '🟡').
+convertSymbol('R', '🔴').
+convertSymbol('Y', '🟡').
 convertSymbol('e', '⬜').
 convertSymbol(X, X).
-convertPlayer(1, 'RED').
-convertPlayer(2, 'YELLOW').
+convertPlayer(1, 'R').
+convertPlayer(2, 'Y').
 
 % Afficher le plateau
 displayBoard :-
@@ -24,4 +24,4 @@ displayBoard :-
             nl
         )
     ),
-    write('1   2   3   4   5   6   7   '), nl, nl.
+    write('1||2||3||4||5||6||7||'), nl, nl.
