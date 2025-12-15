@@ -27,9 +27,29 @@ swipl -s serverl.pl -g start_server
 ```
 2. Ouvrir http://localhost:8080 pour l’interface (fichiers dans [view/](view/index.html)). -->
 
-<!-- ## Tests de performance
+## Tests de performance
 
-… -->
+Comparer les IA entre elles sur plusieurs parties :
+
+```bash
+swipl features/stats/stats.pl
+```
+
+Puis dans la console Prolog :
+
+```prolog
+% Lancer tous les matchups (aiMinMax vs aiRand, aiMinMax vs aiV2, aiRand vs aiV2)
+run_all_stats(100).  % 100 parties par matchup
+
+% Ou un matchup spécifique (Rouge vs Jaune)
+initRunStat(50, 'aiMinMax', 'aiRand').  % 50 parties
+```
+
+Les statistiques affichent pour chaque IA :
+- Nombre de victoires et pourcentage
+- Nombre moyen de coups par victoire
+
+Types d'IA disponibles : `'aiMinMax'`, `'aiRand'`, `'aiV2'`
 
 ## Tests unitaires
 
