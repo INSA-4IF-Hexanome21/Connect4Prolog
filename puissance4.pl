@@ -5,6 +5,7 @@
 :- consult('features/ia/ai_random.pl').
 :- consult('features/ia/ai_V2.pl').
 :- consult('features/joueur/joueur.pl').
+:- consult('features/ia/ai_optimized.pl').
 
 :- dynamic column/3. % column(Col, ColData, LastPos)
 :- dynamic player/2.
@@ -21,6 +22,11 @@ ai(Move, player(Color, _)) :-
     writeln('AI is thinking...'),
     ia_choisir_coup(Color, Move),
     write('AI plays column : '), writeln(Move).
+
+aiOp(Move, player(Color, _)) :-
+    writeln('AI optimized is thinking...'),
+    ia_op_choisir_coup(Color, Move),
+    write('AI optimized plays column : '), writeln(Move).
 
 askPlayerMove(Move,_) :-
     repeat,
@@ -51,6 +57,9 @@ play :-
         Type == 'aiV2' -> 
         aiV2(Move,Current) %Appel l'IA pour un mouvement
     ;
+        Type == 'aiOp' -> 
+        aiOp(Move,Current) %Appel l'IA pour un mouvement
+    ;
         askPlayerMove(Move,Current) %Appel le joueur pour un mouvement
     ),   
 
@@ -73,11 +82,13 @@ selectPlayerType(Type) :-
     writeln('2 - aiV2  '),
     writeln('3 - aiMinMax  '),
     writeln('4 - player '),
+    writeln('5 - aiOptimized  '),
     read(Entry),
     (   Entry =:= 1 -> Type = 'aiRand'
     ;   Entry =:= 2 -> Type = 'aiV2'
     ;   Entry =:= 3 -> Type = 'aiMinMax'
     ;   Entry =:= 4 -> Type = 'human'
+    ;   Entry =:= 5 -> Type = 'aiOp'
     ;   writeln('Invalid option.'), fail
     ).
 
