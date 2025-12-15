@@ -3,11 +3,22 @@
 :- dynamic res/7.
 :- dynamic playerStat/3.
 
-meanCoup(NbCoup,Win,Mean) :- (not(NbCoup == 0), Mean is NbCoup/Win) ; (Mean is 0).
-meanTemps(Temps,NbCoup,Mean) :- (not(Temps == 0), Mean is Temps/NbCoup*1000) ; (Mean is 0).
+% meanCoup(NbCoup,Win,Mean) :- (not(NbCoup == 0), Mean is NbCoup/Win) ; (Mean is 0).
+meanCoupParPartie(NbCoup, TotalMatch, Mean) :-
+    ( TotalMatch > 0 ->
+        Mean is NbCoup / TotalMatch
+    ;
+        Mean is 0
+    ).
+meanTemps(Temps, NbCoup, Mean) :-
+    (   NbCoup > 0
+    ->  Mean is Temps / NbCoup
+    ;   Mean is 0
+    ).
 ia_type('aiMinMax').
 ia_type('aiRand').
 ia_type('aiV2').
+ia_type('aiOp').
 all_ias(List) :-
     findall(IA, ia_type(IA), List).
 
@@ -27,14 +38,19 @@ run_against(IA1, [IA2|Rest], NbMatch) :-
     write('MATCHUP : '), write(IA1), write(' VS '), writeln(IA2),
     writeln('=============================='),
     initRunStat(NbMatch, IA1, IA2),
+    % also run the inverse matchup so each IA plays as PlayerJ (first)
+    writeln('=============================='),
+    write('MATCHUP (inverse) : '), write(IA2), write(' VS '), writeln(IA1),
+    writeln('=============================='),
+    initRunStat(NbMatch, IA2, IA1),
     nl,
     run_against(IA1, Rest, NbMatch).
 
 
 runStat(0, TypeR, TypeJ) :- 
     res(TempsJaune,TempsRouge,CoupJaune,CoupRouge,WinJaune,WinRouge,TotalMatch),
-    meanCoup(CoupJaune,WinJaune,MeanCoupJ),
-    meanCoup(CoupRouge,WinRouge,MeanCoupR),
+    meanCoupParPartie(CoupRouge, TotalMatch, MeanCoupR),
+    meanCoupParPartie(CoupJaune, TotalMatch, MeanCoupJ),
     meanTemps(TempsJaune,CoupJaune,MeanTempsJ),
     meanTemps(TempsRouge,CoupRouge,MeanTempsR),
     PercWinR is WinRouge/TotalMatch * 100,
@@ -64,6 +80,7 @@ initRunStat(NbMatch, TypeR, TypeJ) :- retractall(column(_,_,_)),
     initPlayerStat(PlayerR , TypeR, PlayerJ, TypeJ),
     playStat(0),
     NewNbMatch is NbMatch - 1,
+    write('Avancement evaluation : '), write(NewNbMatch), writeln(' matches restants'),
     runStat(NewNbMatch, TypeR, TypeJ).
 
 runStat(NbMatch, TypeR, TypeJ) :- not(NbMatch == 0),retractall(column(_,_,_)),
@@ -74,6 +91,7 @@ runStat(NbMatch, TypeR, TypeJ) :- not(NbMatch == 0),retractall(column(_,_,_)),
     initPlayerStat(PlayerR , TypeR, PlayerJ, TypeJ),
     playStat(0),
     NewNbMatch is NbMatch - 1,
+    write('Avancement evaluation : '), write(NewNbMatch), writeln(' matches restants'),
     runStat(NewNbMatch, TypeR, TypeJ).
 
 initPlayerStat(PlayerR, TypeR, PlayerJ, TypeJ) :-
@@ -86,51 +104,54 @@ initPlayerStat(PlayerR, TypeR, PlayerJ, TypeJ) :-
     PlayerJ = player('Y', TypeJ),
     assert(playerJ('Y', TypeJ)),
 
-    random(1,3, Num),
-    (   Num =:= 1 ->
-        assert(currentPlayer(PlayerJ))
-    ;    
-        assert(currentPlayer(PlayerR))
-    ).
+    assert(currentPlayer(PlayerJ)).
 
 timed_ai_move(Type, Current, Move, Time) :-
-    statistics(cputime, T0),
+    get_time(T0),
     choose_ai_move(Type, Move, Current),
-    statistics(cputime, T1),
-    Time is T1 - T0.
+    get_time(T1),
+    Time is (T1 - T0) * 1_000_000.
 
 playStat(Count) :-
     NewCount is Count + 1,
     currentPlayer(Current),
     Current = player(Color,Type),
-    timed_ai_move(Type,Current,Move,Time),
-    playMove(Move, Color, NewCol), 
 
-    (   isOver(Color, Move) -> 
-        (%write('Partie gagne en '),
-        %write(NewCount),
-        %writeln(' coup.'),
-            res(TempsJaune,TempsRouge,CoupJaune,CoupRouge,WinJaune,WinRouge,TotalMatch),
-            retract(res(TempsJaune,TempsRouge,CoupJaune,CoupRouge,WinJaune,WinRouge,TotalMatch)),
-            ((
-                Color == 'R', 
-                NewCoupRouge is CoupRouge + NewCount, 
-                NewWinRouge is WinRouge + 1, 
-                NewTempsRouge is TempsRouge + Time,
-                assert(res(TempsJaune,NewTempsRouge,CoupJaune,NewCoupRouge,WinJaune,NewWinRouge,TotalMatch)))
-            ;
-            (
-                NewCoupJaune is CoupJaune + NewCount, 
-                NewWinJaune is WinJaune + 1, 
-                NewTempsJaune is TempsJaune + Time,
-                assert(res(NewTempsJaune,TempsRouge,NewCoupJaune,CoupRouge,NewWinJaune,WinRouge,TotalMatch))
-            )),
-            !) % on stoppe le jeu
-        ;
-        nextPlayer,
-        playStat(NewCount)  % on continue de jouer
+    timed_ai_move(Type, Current, Move, Time),
+
+    % --- accumulation du temps a chaque coup ---
+    res(TempsJaune,TempsRouge,CoupJaune,CoupRouge,WinJaune,WinRouge,TotalMatch),
+    retract(res(TempsJaune,TempsRouge,CoupJaune,CoupRouge,WinJaune,WinRouge,TotalMatch)),
+    (   Color == 'R'
+    ->  NewTempsRouge is TempsRouge + Time,
+        assert(res(TempsJaune,NewTempsRouge,CoupJaune,CoupRouge,WinJaune,WinRouge,TotalMatch))
+    ;   NewTempsJaune is TempsJaune + Time,
+        assert(res(NewTempsJaune,TempsRouge,CoupJaune,CoupRouge,WinJaune,WinRouge,TotalMatch))
+    ),
+
+    playMove(Move, Color, _NewCol),
+
+    (   isOver(Color, Move)
+    ->  % --- fin de partie : comptage des coups et victoires ---
+        res(TJ,TR,CJ,CR,WJ,WR,TM),
+        retract(res(TJ,TR,CJ,CR,WJ,WR,TM)),
+
+        PlayerMoves is (NewCount + 1) // 2,
+
+        (   Color == 'R'
+        ->  NewCoupRouge is CR + PlayerMoves,
+            NewWinRouge  is WR + 1,
+            assert(res(TJ,TR,CJ,NewCoupRouge,WJ,NewWinRouge,TM))
+        ;   NewCoupJaune is CJ + PlayerMoves,
+            NewWinJaune  is WJ + 1,
+            assert(res(TJ,TR,NewCoupJaune,CR,NewWinJaune,WR,TM))
+        ),
+        !
+    ;   nextPlayer,
+        playStat(NewCount)
     ).
 
 choose_ai_move('aiMinMax', Move, Current) :- ai(Move, Current).
 choose_ai_move('aiRand',   Move, Current) :- aiV1(Move, Current).
 choose_ai_move('aiV2',     Move, Current) :- aiV2(Move, Current).
+choose_ai_move('aiOp',     Move, Current) :- aiOp(Move, Current).

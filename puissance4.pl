@@ -25,9 +25,10 @@ ai(Move, player(Color, _)) :-
     !.
 
 aiOp(Move, player(Color, _)) :-
-    writeln('AI optimized is thinking...'),
+    %writeln('AI optimized is thinking...'),
     ia_op_choisir_coup(Color, Move),
-    write('AI optimized plays column : '), writeln(Move).
+    %write('AI optimized plays column : '), writeln(Move)
+    !.
 
 askPlayerMove(Move,_) :-
     repeat,
@@ -66,6 +67,7 @@ play :-
 choose_ai_move('aiMinMax', Move, Current) :- ai(Move, Current).
 choose_ai_move('aiRand',   Move, Current) :- aiV1(Move, Current).
 choose_ai_move('aiV2',     Move, Current) :- aiV2(Move, Current).
+choose_ai_move('aiOp',     Move, Current) :- aiOp(Move, Current).
 choose_ai_move('human',    Move, Current) :- askPlayerMove(Move, Current).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   INITIALISATION   ------------------- 

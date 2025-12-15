@@ -55,7 +55,7 @@ ia_choose_move(PlayerColor, Move, Strategy) :-
     ),
 
     % Select the best move from the scores
-    write('Scores: '), writeln(Scores),
+    %write('Scores: '), writeln(Scores),
     find_best_index(Scores, Move),
     
     % Print stats
