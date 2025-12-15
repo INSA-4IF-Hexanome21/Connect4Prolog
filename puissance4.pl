@@ -112,9 +112,11 @@ initPlayer(PlayerR, PlayerJ) :-
 
     random(1,3, Num),
     (   Num =:= 1 ->
-        assert(currentPlayer(PlayerJ))
+        assert(currentPlayer(PlayerJ)),
+        write(PlayerJ), write(' starts')
     ;    
-        assert(currentPlayer(PlayerR))
+        assert(currentPlayer(PlayerR)),
+        write(PlayerR), write(' starts')
     ).
 
 
