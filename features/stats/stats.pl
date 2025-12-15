@@ -48,27 +48,30 @@ run_against(IA1, [IA2|Rest], NbMatch) :-
 
 
 runStat(0, TypeR, TypeJ) :- 
-    res(TempsJaune,TempsRouge,CoupJaune,CoupRouge,WinJaune,WinRouge,TotalMatch),
-    meanCoupParPartie(CoupRouge, TotalMatch, MeanCoupR),
-    meanCoupParPartie(CoupJaune, TotalMatch, MeanCoupJ),
-    meanTemps(TempsJaune,CoupJaune,MeanTempsJ),
-    meanTemps(TempsRouge,CoupRouge,MeanTempsR),
-    PercWinR is WinRouge/TotalMatch * 100,
-    PercWinJ is WinJaune/TotalMatch * 100,
-    
-    writeln("---RESULTATS---"),
-    write('Nombre de match : '), writeln(TotalMatch),
-    write(TypeR), write(' :'), write(WinRouge), 
-    write(' victoires ('), write(PercWinR), 
-    write(' %) avec une moyenne de '), write(MeanCoupR), 
-    write(' coups et un temps de reflexion de '),
-    write(MeanTempsR), writeln(' micros/coup.'),
+    res(TempsJaune, TempsRouge, CoupJaune, CoupRouge, WinJaune, WinRouge, TotalMatch),
+    print_results('aiMinMax','aiRand', WinRouge, WinJaune, CoupRouge, CoupJaune, TempsRouge, TempsJaune, TotalMatch).
 
-    write(TypeJ), write(' :'), write(WinJaune), 
-    write(' victoires ('), write(PercWinJ), 
-    write(' %) avec une moyenne de '), write(MeanCoupJ), 
-    write(' coups et un temps de reflexion de '),
-    write(MeanTempsJ), writeln(' micros/coup.'),!.
+print_results(Type1, Type2, Win1, Win2, Coup1, Coup2, Temps1, Temps2, TotalMatch) :-
+    Perc1 is (Win1 / TotalMatch) * 100,
+    Perc2 is (Win2 / TotalMatch) * 100,
+    MeanCoup1 is Coup1 / TotalMatch,
+    MeanCoup2 is Coup2 / TotalMatch,
+    MeanTemps1Ms is Temps1 / TotalMatch / 1000,  % µs → ms
+    MeanTemps2Ms is Temps2 / TotalMatch / 1000,
+    
+    format('--- RESULTATS ---~n', []),
+    format('Nombre de parties : ~w~n~n', [TotalMatch]),
+    
+    format('~w :~n', [Type1]),
+    format('  Victoires : ~w (~2f %)~n', [Win1, Perc1]),
+    format('  Moyenne coups / partie : ~2f~n', [MeanCoup1]),
+    format('  Temps moyen / coup : ~2f ms~n~n', [MeanTemps1Ms]),
+    
+    format('~w :~n', [Type2]),
+    format('  Victoires : ~w (~2f %)~n', [Win2, Perc2]),
+    format('  Moyenne coups / partie : ~2f~n', [MeanCoup2]),
+    format('  Temps moyen / coup : ~2f ms~n~n', [MeanTemps2Ms]).
+
 
 initRunStat(NbMatch, TypeR, TypeJ) :- retractall(column(_,_,_)),
     retractall(res(_,_,_,_,_,_,_)),
@@ -137,14 +140,19 @@ playStat(Count) :-
         retract(res(TJ,TR,CJ,CR,WJ,WR,TM)),
 
         PlayerMoves is (NewCount + 1) // 2,
+        OppMoves is NewCount - PlayerMoves,
 
         (   Color == 'R'
-        ->  NewCoupRouge is CR + PlayerMoves,
+        ->  % Rouge just won: add Rouge moves and opponent (Jaune) moves, increment Rouge wins
+            NewCoupRouge is CR + PlayerMoves,
+            NewCoupJaune is CJ + OppMoves,
             NewWinRouge  is WR + 1,
-            assert(res(TJ,TR,CJ,NewCoupRouge,WJ,NewWinRouge,TM))
-        ;   NewCoupJaune is CJ + PlayerMoves,
+            assert(res(TJ,TR,NewCoupJaune,NewCoupRouge,WJ,NewWinRouge,TM))
+        ;   % Jaune just won: add Jaune moves and opponent (Rouge) moves, increment Jaune wins
+            NewCoupJaune is CJ + PlayerMoves,
+            NewCoupRouge is CR + OppMoves,
             NewWinJaune  is WJ + 1,
-            assert(res(TJ,TR,NewCoupJaune,CR,NewWinJaune,WR,TM))
+            assert(res(TJ,TR,NewCoupJaune,NewCoupRouge,NewWinJaune,WR,TM))
         ),
         !
     ;   nextPlayer,
