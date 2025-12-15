@@ -5,6 +5,6 @@ aiV1(Move,_) :-
     random(1,8,Move),
     column(Move,_,IndexMax),
     not(IndexMax == 6),
-    write("AI RANDOM Play : "),
-    writeln(Move),
+    %write("AI RANDOM Play : "),
+    %writeln(Move),
     !.

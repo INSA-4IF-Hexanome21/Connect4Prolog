@@ -45,22 +45,23 @@ ia_choisir_coup(Joueur, Mouvement) :-
     
     % 3. Appel au fichier negamax.pl
     % Note: analyser/3 renvoie une liste de 7 scores correspondant aux colonnes 0..6
-    write('IA (Negamax) analyse le plateau...'), nl,
+    %write('IA (Negamax) analyse le plateau...'), nl,
     analyser(Plateau, JetonNegamax, Scores),
     
-    write('Scores par colonne (de 1 a 7) : '), writeln(Scores),
+    %write('Scores par colonne (de 1 a 7) : '), writeln(Scores),
 
     % 4. Trouver le meilleur index (1-based pour le Main)
     trouver_meilleur_index(Scores, Mouvement),
     
     % Debug stats
-    (current_predicate(compteur_noeuds/1), compteur_noeuds(N) -> 
-        write('Noeuds explores : '), writeln(N)
-    ; true).
+    % (current_predicate(compteur_noeuds/1), compteur_noeuds(N) -> 
+    %     write('Noeuds explores : '), writeln(N)
+    % ; true)
+    !.
 
 % Si Negamax renvoie tout "invalide" (colonne pleine ou bug), on joue aléatoire
 ia_choisir_coup(_, Mouvement) :-
-    writeln('Negamax n\'a rien trouve, coup aleatoire.'),
+    %writeln('Negamax n\'a rien trouve, coup aleatoire.'),
     aiV1(Mouvement,_).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

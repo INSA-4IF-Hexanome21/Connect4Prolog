@@ -12,8 +12,9 @@ aiV2(Move,_) :-
         not(IndexMax == 6),
         !
     )
-    ),write("AI V2 Play : "),
-    writeln(Move).
+    ),%write("AI V2 Play : "),
+    %writeln(Move)
+    !.
 
 verifCol(Move) :- between(1,7,Move),
         (
