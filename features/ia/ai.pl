@@ -1,87 +1,117 @@
-:- module(ai, [ia_choisir_coup/2]).
-:- consult('negamax.pl').
-:- use_module(library(lists)).
+:- consult('features/ia/negamax.pl').
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% -----   ADAPTATEUR (BRIDGE)   ------------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% 1. Lire les colonnes depuis le module 'user' (le fichier principal)
-get_column_from_main(NumCol, DonneesCol) :-
-    user:column(NumCol, DonneesCol, _).
-
+obtenir_colonne(NumCol, DonneesCol) :-
+    column(NumCol, DonneesCol, _).
 % 2. Convertir TOUT le plateau format Main vers format Negamax
 % Main: Colonnes 1..7, contiennent 'e', 'RED', 'YELLOW'
 % Negamax: Liste de 7 listes, contiennent 'x', 'o' (pas de vides)
-convertir_plateau(PlateauNegamax) :-
+convertir_plateau_vers_negamax(PlateauNegamax) :-
     findall(ColNettoyee,
-            (between(1, 7, NumCol),
-             get_column_from_main(NumCol, Brut),
-             nettoyer_colonne(Brut, ColNettoyee)),
+            (between(1, 7, NumCol), obtenir_colonne(NumCol, ColBrute),
+             nettoyer_colonne(ColBrute, ColNettoyee)),
             PlateauNegamax).
-
 % Enlève les 'e' et convertit les couleurs
 nettoyer_colonne(ListeBrute, ListePropre) :-
-    findall(Val,
-            (member(Elem, ListeBrute),
-             Elem \= 'e',              % On vire les cases vides pour Negamax
-             convertir_jeton(Elem, Val)),
+    findall(JetonConverti,
+            (member(Jeton, ListeBrute), Jeton \= 'e',
+             convertir_jeton(Jeton, JetonConverti)),
             ListePropre).
 
 % Dictionnaire de traduction
-convertir_jeton('YELLOW', x). % Si YELLOW est x dans negamax
-convertir_jeton('RED', o).    % Si RED est o dans negamax
+convertir_jeton('Y', x).
+convertir_jeton('R', o).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   LOGIQUE (ALGO overall)   -------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-ia_choisir_coup(Joueur, Mouvement) :-
-    % 1. Conversion du nom du joueur (RED -> o)
-    convertir_jeton(Joueur, JetonNegamax),
-    
-    % 2. Conversion du plateau (user:column -> Liste de listes)
-    convertir_plateau(Plateau),
-    
-    % 3. Appel au fichier negamax.pl
-    % Note: analyser/3 renvoie une liste de 7 scores correspondant aux colonnes 0..6
-    write('IA (Negamax) analyse le plateau...'), nl,
-    analyser(Plateau, JetonNegamax, Scores),
-    
-    write('Scores par colonne (de 1 a 7) : '), writeln(Scores),
+colonne_jouable_main(NumCol) :-
+    column(NumCol, _, LastPos),
+    LastPos < 6.
 
-    % 4. Trouver le meilleur index (1-based pour le Main)
-    trouver_meilleur_index(Scores, Mouvement),
-    
-    % Debug stats
-    (current_predicate(compteur_noeuds/1), compteur_noeuds(N) -> 
-        write('Noeuds explores : '), writeln(N)
-    ; true).
+filtrer_scores_jouables(Scores, ScoresJouables) :-
+    filtrer_scores_jouables_aux(Scores, 1, ScoresJouables).
 
-% Si Negamax renvoie tout "invalide" (colonne pleine ou bug), on joue aléatoire
+filtrer_scores_jouables_aux([], _, []).
+filtrer_scores_jouables_aux([Score|Reste], NumCol, [ScoreFiltre|ResteFiltre]) :-
+    NextCol is NumCol + 1,
+    (   colonne_jouable_main(NumCol),
+        Score \= invalide
+    ->  ScoreFiltre = Score
+    ;   ScoreFiltre = invalide
+    ),
+    filtrer_scores_jouables_aux(Reste, NextCol, ResteFiltre).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----   PREDICAT PRINCIPAL IA   -----------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ia_choisir_coup(CouleurJoueur, Mouvement) :-
+    format('~n=== IA NEGAMAX ACTIVÉE ===~n', []),
+    format('Couleur joueur: ~w~n', [CouleurJoueur]),
+    convertir_jeton(CouleurJoueur, JetonNegamax),
+    format('Jeton Negamax: ~w~n', [JetonNegamax]),
+    convertir_plateau_vers_negamax(PlateauNegamax),
+    format('Plateau converti: ~w~n', [PlateauNegamax]),
+    format('Appel de analyser/3...~n', []),
+    analyser(PlateauNegamax, JetonNegamax, ScoresBruts),
+    format('Scores bruts: ~w~n', [ScoresBruts]),
+    filtrer_scores_jouables(ScoresBruts, ScoresFiltres),
+    format('Scores filtrés: ~w~n', [ScoresFiltres]),
+    (   trouver_meilleur_index(ScoresFiltres, 1, Mouvement)
+    ->  format('Meilleur coup: colonne ~w~n', [Mouvement]),
+        (   colonne_jouable_main(Mouvement)
+        ->  format('Colonne ~w confirmée jouable~n', [Mouvement])
+        ;   format('ERREUR: Colonne ~w non jouable~n', [Mouvement]),
+            fail
+        ),
+        (   compteur_noeuds(N)
+        ->  format('Noeuds explorés: ~w~n', [N])
+        ;   true
+        )
+    ;   format('Aucun coup valide trouvé~n', []),
+        fail
+    ).
+
 ia_choisir_coup(_, Mouvement) :-
-    writeln('Negamax n\'a rien trouve, coup aleatoire.'),
-    aiV1(Mouvement,_).
+    format('Fallback activé~n', []),
+    repeat,
+    random(1, 8, Mouvement),
+    colonne_jouable_main(Mouvement),
+    !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   UTILITAIRES   ----------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Trouve l'index (1..7) de la valeur maximale dans la liste des scores
-trouver_meilleur_index(Scores, Index) :-
-    trouver_meilleur_index_aux(Scores, 1, -100000, 0, Index),
-    Index > 0. % Vérifie qu'on a trouvé quelque chose valide
+trouver_meilleur_index(Scores, IndexDebut, MeilleurIndex) :-
+    trouver_meilleur_index_aux(Scores, IndexDebut, -100000, 0, MeilleurIndex),
+    MeilleurIndex > 0.
 
-% Base case
-trouver_meilleur_index_aux([], _, _, MeilleurIndex, MeilleurIndex).
-
-% Recursive
-trouver_meilleur_index_aux([Score|Reste], Cursor, MaxActuel, IndexActuel, Resultat) :-
-    NextCursor is Cursor + 1,
-    (   Score \= invalide, Score > MaxActuel
-    ->  % Nouveau meilleur score trouvé
-        trouver_meilleur_index_aux(Reste, NextCursor, Score, Cursor, Resultat)
-    ;   % Sinon on continue
-        trouver_meilleur_index_aux(Reste, NextCursor, MaxActuel, IndexActuel, Resultat)
+trouver_meilleur_index_aux([], _, _, MeilleurIdx, MeilleurIdx) :-
+    MeilleurIdx > 0.
+trouver_meilleur_index_aux([Score|Reste], IndexCourant, MeilleurScoreActuel,
+                           MeilleurIndexActuel, Resultat) :-
+    IndexSuivant is IndexCourant + 1,
+    (   Score \= invalide,
+        number(Score),
+        Score > MeilleurScoreActuel
+    ->  trouver_meilleur_index_aux(Reste, IndexSuivant, Score, IndexCourant,
+                                  Resultat)
+    ;   trouver_meilleur_index_aux(Reste, IndexSuivant, MeilleurScoreActuel,
+                                  MeilleurIndexActuel, Resultat)
     ).
 
+test_conversion :-
+    format('~n=== TEST DE CONVERSION ===~n', []),
+    convertir_plateau_vers_negamax(Plateau),
+    format('Plateau: ~w~n', [Plateau]),
+    format('~nColonnes jouables:~n', []),
+    forall(between(1, 7, Col),
+           (colonne_jouable_main(Col)
+           -> format('  Colonne ~w: jouable~n', [Col])
+           ;  format('  Colonne ~w: pleine~n', [Col]))).
