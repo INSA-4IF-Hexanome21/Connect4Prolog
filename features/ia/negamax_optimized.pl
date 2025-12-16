@@ -26,34 +26,47 @@ mate_value(1000000).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% CŒUR DU BITBOARD
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%Calcule le bit correspondant à la case du bas d’une colonne donnée.
+%Il sert à déclencher la gravité pour trouver où un pion va tomber dans cette colonne.
 bottom_col(Col, Bit) :-
     Bit is 1 << (Col * 7).
 
+%Construit un masque couvrant toutes les cases (et la sentinelle) d’une colonne.
+%Il permet d’isoler une colonne et d’empêcher que les calculs débordent ailleurs.
 column_mask(Col, Mask) :-
     % 7 bits (inclut la sentinelle à la ligne=6)
     Mask is 127 << (Col * 7).
 
+%Donne le bit de la case jouable la plus haute d’une colonne.
+%Il sert à savoir instantanément si une colonne est pleine ou non.
 top_mask_playable(Col, Bit) :-
     % Ligne supérieure jouable : ligne = 5
     Bit is 1 << (Col * 7 + 5).
 
+%Teste si la colonne est jouable en vérifiant que sa case haute est vide.
+%Il évite de simuler des coups illégaux sans parcourir la colonne.
 can_play(Mask, Col) :-
     between(0, 6, Col),
     top_mask_playable(Col, Top),
     (Mask /\ Top) =:= 0.
 
+%Calcule exactement la case où tombe le pion dans une colonne donnée.
+%C’est le cœur du moteur : il simule la gravité en O(1) avec une addition binaire.
 move_bit(Mask, Col, MoveBit) :-
     bottom_col(Col, Bottom),
     column_mask(Col, ColMask),
     MoveBit is (Mask + Bottom) /\ ColMask.
 
+%Applique un coup en ajoutant le pion au plateau et en changeant le joueur actif.
+%Il met à jour l’état du jeu sans copier de plateau ni utiliser de conditions.
 make_move(Pos, Mask, Col, NewPos, NewMask, MoveBit) :-
     move_bit(Mask, Col, MoveBit),
     NewMask is Mask \/ MoveBit,
     % NewPos = jetons du joueur qui doit jouer (adversaire)
     NewPos is Pos xor Mask.
 
+%Calcule toutes les cases jouables du plateau en une seule opération.
+%Il sert aux heuristiques et à la détection rapide des menaces.
 playable_mask(Mask, Playable) :-
     bottom_mask(Bottom),
     board_mask(Board),
@@ -63,7 +76,8 @@ playable_mask(Mask, Playable) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% DÉTECTION DE VICTOIRE (O(1))
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%Teste si une position contient un alignement gagnant dans une direction donnée.
+%Il permet de détecter une victoire en temps constant uniquement avec des opérations bit-à-bit.
 is_winning(Pos) :-
     % Horizontal (décalage 7)
     M1 is Pos /\ (Pos >> 7),
