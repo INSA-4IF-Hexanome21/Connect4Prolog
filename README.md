@@ -17,15 +17,7 @@ swipl puissance4.pl
 ```prolog
 initBoard.
 ```
-3. À chaque tour, saisissez un numéro de colonne entre 1 et 7. Le jeu s’arrête dès qu’un joueur aligne 4 pions ou quand le plateau est plein.
-
-<!-- ## Interface web (HTTP + front statique)
-
-1. Démarrer le serveur HTTP (port 8080) :
-```bash
-swipl -s serverl.pl -g start_server
-```
-2. Ouvrir http://localhost:8080 pour l’interface (fichiers dans [view/](view/index.html)). -->
+3. À chaque tour, saisissez un numéro de colonne entre 1 et 7 suivi d'un point. Le jeu s’arrête dès qu’un joueur aligne 4 pions ou quand le plateau est plein.
 
 ## Tests de performance
 
@@ -49,7 +41,7 @@ Les statistiques affichent pour chaque IA :
 - Nombre de victoires et pourcentage
 - Nombre moyen de coups par victoire
 
-Types d'IA disponibles : `'aiMinMax'`, `'aiRand'`, `'aiV2'`
+Types d'IA disponibles : `aiMinMax`, `aiRand`, `aiV2`, `aiOptimized`
 
 ## Tests unitaires
 
