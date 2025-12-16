@@ -49,7 +49,7 @@ run_against(IA1, [IA2|Rest], NbMatch) :-
 
 runStat(0, TypeR, TypeJ) :- 
     res(TempsJaune, TempsRouge, CoupJaune, CoupRouge, WinJaune, WinRouge, TotalMatch),
-    print_results('aiMinMax','aiRand', WinRouge, WinJaune, CoupRouge, CoupJaune, TempsRouge, TempsJaune, TotalMatch).
+    print_results(TypeR,TypeJ, WinRouge, WinJaune, CoupRouge, CoupJaune, TempsRouge, TempsJaune, TotalMatch).
 
 print_results(Type1, Type2, Win1, Win2, Coup1, Coup2, Temps1, Temps2, TotalMatch) :-
     Perc1 is (Win1 / TotalMatch) * 100,
