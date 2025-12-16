@@ -51,34 +51,41 @@ filtrer_scores_jouables_aux([Score|Reste], NumCol, [ScoreFiltre|ResteFiltre]) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ia_choisir_coup(CouleurJoueur, Mouvement) :-
-    format('~n=== IA NEGAMAX ACTIVÉE ===~n', []),
-    format('Couleur joueur: ~w~n', [CouleurJoueur]),
+    % format('~n=== IA NEGAMAX ACTIVÉE ===~n', []),
+    % format('Couleur joueur: ~w~n', [CouleurJoueur]),
+
     convertir_jeton(CouleurJoueur, JetonNegamax),
-    format('Jeton Negamax: ~w~n', [JetonNegamax]),
+    % format('Jeton Negamax: ~w~n', [JetonNegamax]),
+
     convertir_plateau_vers_negamax(PlateauNegamax),
-    format('Plateau converti: ~w~n', [PlateauNegamax]),
-    format('Appel de analyser/3...~n', []),
+    % format('Plateau converti: ~w~n', [PlateauNegamax]),
+
+    % format('Appel de analyser/3...~n', []),
     analyser(PlateauNegamax, JetonNegamax, ScoresBruts),
-    format('Scores bruts: ~w~n', [ScoresBruts]),
+    % format('Scores bruts: ~w~n', [ScoresBruts]),
+
     filtrer_scores_jouables(ScoresBruts, ScoresFiltres),
-    format('Scores filtrés: ~w~n', [ScoresFiltres]),
+    % format('Scores filtrés: ~w~n', [ScoresFiltres]),
+
     (   trouver_meilleur_index(ScoresFiltres, 1, Mouvement)
-    ->  format('Meilleur coup: colonne ~w~n', [Mouvement]),
+    ->  % format('Meilleur coup: colonne ~w~n', [Mouvement]),
         (   colonne_jouable_main(Mouvement)
-        ->  format('Colonne ~w confirmée jouable~n', [Mouvement])
-        ;   format('ERREUR: Colonne ~w non jouable~n', [Mouvement]),
+        ->  % format('Colonne ~w confirmée jouable~n', [Mouvement])
+            true
+        ;   % format('ERREUR: Colonne ~w non jouable~n', [Mouvement]),
             fail
         ),
-        (   compteur_noeuds(N)
-        ->  format('Noeuds explorés: ~w~n', [N])
+        (   compteur_noeuds(_N)
+        ->  % format('Noeuds explorés: ~w~n', [_N])
+            true
         ;   true
         )
-    ;   format('Aucun coup valide trouvé~n', []),
+    ;   % format('Aucun coup valide trouvé~n', []),
         fail
     ).
 
 ia_choisir_coup(_, Mouvement) :-
-    format('Fallback activé~n', []),
+    %format('Fallback activé~n', []),
     repeat,
     random(1, 8, Mouvement),
     colonne_jouable_main(Mouvement),

@@ -1,6 +1,6 @@
-convertSymbol('R', '🔴').
-convertSymbol('Y', '🟡').
-convertSymbol('e', '⬜').
+% convertSymbol('R', '🔴').
+% convertSymbol('Y', '🟡').
+% convertSymbol('e', '⬜').
 convertSymbol(X, X).
 convertPlayer(1, 'R').
 convertPlayer(2, 'Y').

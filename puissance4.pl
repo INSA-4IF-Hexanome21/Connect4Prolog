@@ -19,14 +19,16 @@
 
 % Le Player est une structure player(Color, Type)
 ai(Move, player(Color, _)) :- 
-    writeln('AI is thinking...'),
+    %writeln('AI is thinking...'),
     ia_choisir_coup(Color, Move),
-    write('AI plays column : '), writeln(Move).
+    %write('AI plays column : '), writeln(Move).
+    !.
 
 aiOp(Move, player(Color, _)) :-
-    writeln('AI optimized is thinking...'),
+    %writeln('AI optimized is thinking...'),
     ia_op_choisir_coup(Color, Move),
-    write('AI optimized plays column : '), writeln(Move).
+    %write('AI optimized plays column : '), writeln(Move)
+    !.
 
 askPlayerMove(Move,_) :-
     repeat,
@@ -47,33 +49,26 @@ play :-
     currentPlayer(Current),
     Current = player(Color,Type),
     write('New turn for: '), writeln(Color),
-
-    (   Type == 'aiMinMax' -> 
-        ai(Move,Current) %Appel l'IA pour un mouvement
-    ;
-        Type == 'aiRand' -> 
-        aiV1(Move,Current) %Appel l'IA pour un mouvement
-    ;
-        Type == 'aiV2' -> 
-        aiV2(Move,Current) %Appel l'IA pour un mouvement
-    ;
-        Type == 'aiOp' -> 
-        aiOp(Move,Current) %Appel l'IA pour un mouvement
-    ;
-        askPlayerMove(Move,Current) %Appel le joueur pour un mouvement
-    ),   
-
-    
+    choose_ai_move(Type, Move, Current),
     playMove(Move, Color, NewCol),  
     displayBoard, 
 
     (   isOver(Color, Move) -> 
+        write(Color), writeln(' has won the match !'),
         true % on stoppe le jeu
+    ;
+        isTie ->
+        writeln('It\'s a tie !')
     ;
         nextPlayer,
         play  % on continue de jouer
     ).
-
+    
+choose_ai_move('aiMinMax', Move, Current) :- ai(Move, Current).
+choose_ai_move('aiRand',   Move, Current) :- aiV1(Move, Current).
+choose_ai_move('aiV2',     Move, Current) :- aiV2(Move, Current).
+choose_ai_move('aiOp',     Move, Current) :- aiOp(Move, Current).
+choose_ai_move('human',    Move, Current) :- askPlayerMove(Move, Current).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% ---------------   INITIALISATION   ------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

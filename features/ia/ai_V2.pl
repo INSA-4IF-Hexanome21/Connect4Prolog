@@ -12,13 +12,15 @@ aiV2(Move,_) :-
         not(IndexMax == 6),
         !
     )
-    ),write("AI V2 Play : "),
-    writeln(Move).
+    ),%write("AI V2 Play : "),
+    %writeln(Move)
+    !.
 
 verifCol(Move) :- between(1,7,Move),
         (
             column(Move,Col,LastPos),
             LastPos > 2,
+            not(LastPos == 6),
             Index1 is LastPos,
             Index2 is LastPos - 1,
             Index3 is LastPos - 2,
