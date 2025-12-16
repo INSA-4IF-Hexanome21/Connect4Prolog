@@ -61,13 +61,14 @@ print_results(Type1, Type2, Win1, Win2, Coup1, Coup2, Temps1, Temps2, TotalMatch
     
     format('--- RESULTATS ---~n', []),
     format('Nombre de parties : ~w~n~n', [TotalMatch]),
+    writeln('Joueur jaune premier a jouer'),
     
-    format('~w :~n', [Type1]),
+    format('~w :~n (R)', [Type1]),
     format('  Victoires : ~w (~2f %)~n', [Win1, Perc1]),
     format('  Moyenne coups / partie : ~2f~n', [MeanCoup1]),
     format('  Temps moyen / coup : ~2f ms~n~n', [MeanTemps1Ms]),
     
-    format('~w :~n', [Type2]),
+    format('~w :~n (J)', [Type2]),
     format('  Victoires : ~w (~2f %)~n', [Win2, Perc2]),
     format('  Moyenne coups / partie : ~2f~n', [MeanCoup2]),
     format('  Temps moyen / coup : ~2f ms~n~n', [MeanTemps2Ms]).
