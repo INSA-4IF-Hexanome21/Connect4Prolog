@@ -1,150 +1,201 @@
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_files)).
-:- use_module(library(http/json)).
 :- use_module(library(http/http_json)).
-:- use_module(library(apply)).
-:- use_module(library(lists)). 
+:- use_module(library(random)).
+:- use_module(library(lists)).
 
-% Charge la logique du jeu Puissance 4.
-:- consult('puissance4.pl').
+% ====== GAME ENGINE ======
+:- consult('features/ia/ai.pl').
+:- consult('features/affichage/affichage.pl').
+:- consult('features/coup/coup.pl').
+:- consult('features/fin/fin.pl').
+:- consult('features/ia/ai_random.pl').
+:- consult('features/ia/ai_V2.pl').
+:- consult('features/joueur/joueur.pl').
+:- consult('features/ia/ai_optimized.pl').
 
-% Démarre le serveur HTTP sur le port 8080.
+% ====== DYNAMIC STATE ======
+:- dynamic column/3.
+:- dynamic currentPlayer/1.
+:- dynamic playerR/2.
+:- dynamic playerJ/2.
+
+% ====== SERVER ======
 start_server :-
-    http_server(http_dispatch, [port(8080)]).
+    http_server(http_dispatch, [port(8080)]),
+    writeln('% Server running on http://localhost:8080'),
+    thread_get_message(_).
 
-% Gère les fichiers web statiques (HTML, CSS, JS) depuis le dossier 'view/'.
-:- http_handler(root(.), serve_web_files, [prefix]).
-serve_web_files(Requete) :-
-    member(path(Chemin), Requete),
-    (   Chemin = '/'
-    ->  http_reply_file('view/index.html', [], [pass_to_os(true)])
-    ;   http_reply_from_files('view', [], Requete)
+% ====== STATIC FILES ======
+:- http_handler(root(.), serve_static, [prefix]).
+serve_static(Req) :-
+    member(path(Path), Req),
+    ( Path = '/' -> http_reply_file('view/index.html', [], [])
+    ; http_reply_from_files('view', [], Req)
     ).
 
-% ======================================================================
-% ENDPOINTS
-% ======================================================================
+:- http_handler(root('favicon.ico'), serve_favicon, []).
+serve_favicon(_) :- format('Content-type: image/x-icon~n~n').
 
-% Endpoint pour obtenir l'état initial du plateau.
-:- http_handler(root(api/init_game), init_game_handler, [methods([post])]).
-init_game_handler(_Requete) :-
-    init_board, % Initialise les faits column/3
-    faits_prolog_vers_json_plateau(JSONPlateau), % Convertit les faits en JSON
-    reply_json(json{board: JSONPlateau, player: 'r', status: 'playing'}).
-
-
-% Endpoint pour effectuer un mouvement.
-:- http_handler(root(api/move), move_handler, [methods([post])]).
-move_handler(Requete) :-
-    http_read_json_dict(Requete, JSONEntree),
-    (   get_dict(column, JSONEntree, NumeroCol),
-        get_dict(player, JSONEntree, AtomeJoueur)
-    ->  Joueur = AtomeJoueur,
-        (   est_mouvement_valide(NumeroCol) % Vérifie la validité avec les faits
-        ->  placer_jeton_modifie_faits(NumeroCol, Joueur), % Modifie les faits column/3
-            faits_prolog_vers_matrice_plateau(NouvelleMatricePlateau), % Reconstruit la matrice 2D pour les checks
-            (   hay_ganador(NouvelleMatricePlateau, Gagnant)
-            ->  Statut = winner(Gagnant)
-            ;   tablero_lleno(NouvelleMatricePlateau)
-            ->  Statut = draw
-            ;   (Joueur = r -> JoueurSuivant = a ; JoueurSuivant = r),
-                Statut = playing
-            ),
-            faits_prolog_vers_json_plateau(JSONPlateau) % Relit les faits pour la réponse
-        ;   % Mouvement invalide
-            Statut = invalid_move,
-            JoueurSuivant = Joueur, % Le joueur actuel rejoue
-            faits_prolog_vers_json_plateau(JSONPlateau) % Le plateau ne change pas
+% ====== API ======
+:- http_handler(root(api/init_game), h_init_game, [methods([post])]).
+h_init_game(Request) :-
+    catch(
+        (
+            http_read_json_dict(Request, Data),
+            ( _{red:TypeR, yellow:TypeY} :< Data -> true ; throw(error(missing_field)) ),
+            init_board_api,
+            init_players_api(TypeR, TypeY, Starting),
+            get_board_json(Board),
+            reply_json(json{
+                board: Board,
+                currentPlayer: Starting,
+                status: playing
+            })
         ),
-        reply_json(json{board: JSONPlateau, player: JoueurSuivant, status: Statut})
-    ;   http_global:reply_json_dict(json{error: 'Requête JSON invalide'}),
-        throw(http_reply(bad_request('Requête JSON invalide')))
-    ).
-
-% Helper: Vérifie si un mouvement est valide pour une colonne.
-est_mouvement_valide(NumeroCol) :-
-    num_cols(NbCols), num_rows(NbLignes),
-    NumeroCol >= 1, NumeroCol =< NbCols,
-    column(NumeroCol, _, DernierePos),
-    DernierePos =< NbLignes.
-
-% Helper: Place le jeton en modifiant les faits (appelle la logique de puissance4.pl)
-placer_jeton_modifie_faits(NumeroCol, Joueur) :-
-    colocar_ficha(nil, NumeroCol, Joueur, nil).
-
-
-% Endpoint pour demander un mouvement à l'IA.
-:- http_handler(root(api/ai_move), ai_move_handler, [methods([post])]).
-ai_move_handler(Requete) :-
-    http_read_json_dict(Requete, JSONEntree),
-    (   get_dict(player, JSONEntree, JoueurIA),
-        get_dict(opponent, JSONEntree, JoueurAdversaire)
-    ->  % Reconstruire la matrice 2D à partir des faits pour l'IA
-        faits_prolog_vers_matrice_plateau(MatricePlateauActuelleIA),
-
-        ProfondeurIA = 2, % Profondeur de recherche de l'IA
-        (   elegir_movimiento_ia(MatricePlateauActuelleIA, ProfondeurIA, JoueurIA, JoueurAdversaire, ColonneChoisie)
-        ->  % L'IA a choisi une colonne, applique le mouvement en modifiant les faits
-            placer_jeton_modifie_faits(ColonneChoisie, JoueurIA),
-            faits_prolog_vers_matrice_plateau(NouvelleMatricePlateauIA), % Reconstruit pour les checks
-
-            (   hay_ganador(NouvelleMatricePlateauIA, Gagnant)
-            ->  Statut = winner(Gagnant)
-            ;   tablero_lleno(NouvelleMatricePlateauIA)
-            ->  Statut = draw
-            ;   Statut = playing
-            ),
-            faits_prolog_vers_json_plateau(JSONPlateau), % Relit les faits pour la réponse
-            reply_json(json{columnChosen: ColonneChoisie, board: JSONPlateau, player: JoueurAdversaire, status: Statut})
-        ;   reply_json(json{error: 'L\'IA n\'a pas pu faire de mouvement. La logique IA est-elle implémentée?'}),
-            throw(http_reply(bad_request('Erreur IA')))
+        E,
+        (
+            print_message(error, E),
+            make_empty_board(Board),
+            reply_json(json{error:'Init failed', board:Board, status:'error'})
         )
-    ;   http_global:reply_json_dict(json{error: 'Requête IA JSON invalide'}),
-        throw(http_reply(bad_request('Requête IA JSON invalide')))
+    ).
+
+:- http_handler(root(api/play_move), h_play_move, [methods([post])]).
+h_play_move(Request) :-
+    catch(
+        (
+            http_read_json_dict(Request, Data),
+            Col = Data.column,
+            currentPlayer(Color),
+            valid_column(Col),
+            playMove(Col, Color, _),
+            get_board_json(Board),
+            ( isOver(Color, Col) -> Status = finished, Winner = Color ; next_player_api, Status = playing, Winner = none ),
+            currentPlayer(Next),
+            reply_json(json{
+                board: Board,
+                status: Status,
+                winner: Winner,
+                nextPlayer: Next
+            })
+        ),
+        E,
+        (
+            print_message(error, E),
+            make_empty_board(Board),
+            reply_json(json{error:'Invalid move', board:Board, status:'error'})
+        )
+    ).
+
+h_ia_move(Request) :-
+    catch(
+        (
+            % Step 1: get current player
+            (currentPlayer(Color) -> format('Current player: ~w~n', [Color]) ; throw(error(no_current_player))),
+            
+            % Step 2: get player type
+            (get_player_type(Color, Type) -> format('Player type: ~w~n', [Type]) ; throw(error(no_player_type))),
+            
+            % Step 3: choose IA move
+            (ia_choose_move(Type, Color, Move) -> format('IA chooses: ~w~n', [Move]) ; throw(error(ia_failed))),
+            
+            % Step 4: play move
+            (playMove(Move, Color, _) -> format('Played move: ~w~n', [Move]) ; throw(error(play_failed))),
+            
+            % Step 5: get board
+            get_board_json(Board),
+            
+            % Step 6: check if game over
+            ( isOver(Color, Move) -> Status = finished, Winner = Color ; next_player_api, Status = playing, Winner = none ),
+            currentPlayer(Next),
+            
+            % Step 7: reply JSON
+            reply_json(json{
+                column: Move,
+                board: Board,
+                status: Status,
+                winner: Winner,
+                nextPlayer: Next,
+                iaType: Type,
+                player: Color
+            })
+        ),
+        E,
+        (
+            print_message(error,E),
+            make_empty_board(Board),
+            reply_json(json{error:'IA failed', board:Board, status:'error'})
+        )
     ).
 
 
-% --- HELPERS: Conversion FAITS Prolog (column/3) <-> JSON (matrice 2D) ---
 
-% faits_prolog_vers_json_plateau(-JSONPlateau)
-% Lit les faits column/3, construit une matrice 2D et la convertit en JSON.
-faits_prolog_vers_json_plateau(JSONPlateau) :-
-    faits_prolog_vers_matrice_plateau(MatricePlateau),
-    num_rows(NbLignes),
-    maplist(ligne_vers_liste_json, MatricePlateau, JSONPlateau).
+% ====== GAME LOGIC ======
+init_board_api :-
+    retractall(column(_,_,_)),
+    forall(between(1,7,C),
+        assert(column(C, ['e','e','e','e','e','e'], 0))
+    ).
 
-ligne_vers_liste_json(LigneProlog, ListeJSON) :-
-    maplist(cellule_vers_atome_json, LigneProlog, ListeJSON).
+init_players_api(TypeR, TypeY, Starting) :-
+    retractall(playerR(_,_)),
+    retractall(playerJ(_,_)),
+    retractall(currentPlayer(_)),
+    assert(playerR('r', TypeR)),
+    assert(playerJ('y', TypeY)),
+    random_between(0,1,X),
+    ( X = 0 -> assert(currentPlayer('r')), Starting = 'r'
+    ; assert(currentPlayer('y')), Starting = 'y'
+    ).
 
-cellule_vers_atome_json(v, ' ').
-cellule_vers_atome_json(r, 'r').
-cellule_vers_atome_json(a, 'a').
+next_player_api :-
+    retract(currentPlayer(C)),
+    ( C = 'r' -> N = 'y' ; N = 'r' ),
+    assert(currentPlayer(N)).
 
+get_player_type('r', Type) :- playerR('r', Type).
+get_player_type('y', Type) :- playerJ('y', Type).
 
-% faits_prolog_vers_matrice_plateau(-MatricePlateau)
-% Lit les faits column/3 et construit une matrice 2D (liste de listes).
-% Leinit_board  lignes sont du haut (index 0) vers le bas.
-faits_prolog_vers_matrice_plateau(MatricePlateau) :-
-    num_rows(NbLignes), num_cols(NbCols),
-    findall(ListeLigne, (
-        between(0, NbLignes - 1, IndexLigneMatrice),
-            IndexLigneProlog is NbLignes - IndexLigneMatrice, % Convertit l'index de matrice (0-basé) en index Prolog (1-basé, du bas)        
-        findall(ValeurCellule, (
-            between(1, NbCols, NumeroCol),
-            column(NumeroCol, DonneesCol, _), % Obtient les données de la colonne
-            nth1(IndexLigneProlog, DonneesCol, ValeurCellule) % Obtient la cellule spécifique
-        ), ListeLigne)
-    ), MatricePlateau).
+valid_column(Col) :-
+    integer(Col),
+    between(1,7,Col),
+    column(Col, _, Filled),
+    Filled < 6.
 
-% La conversion JSON -> PrologMatrix n'est pas directement utilisée pour modifier les faits column/3,
-% mais est utile si d'autres parties du code Prolog ont besoin de travailler avec une matrice 2D.
-json_vers_matrice_prolog(JSONPlateau, MatricePlateauProlog) :-
-    maplist(liste_json_vers_ligne, JSONPlateau, MatricePlateauProlog).
+% ====== IA ======
+ia_choose_move(Type, Color, Move) :-
+    catch(call_ai(Type, Color, M), E, (print_message(error,E), fail)),
+    ( valid_column(M) -> Move = M
+    ; findall(C, valid_column(C), ValidCols),
+      random_member(Move, ValidCols)
+    ).
 
-liste_json_vers_ligne(ListeJSON, LigneProlog) :-
-    maplist(atome_json_vers_cellule, ListeJSON, LigneProlog).
+call_ai('aiRand', Color, Move) :- aiV1(Move, player(Color,_)).
+call_ai('aiV2', Color, Move) :- aiV2(Move, player(Color,_)).
+call_ai('aiMinMax', Color, Move) :- ai(Move, player(Color,_)).
+call_ai('aiOp', Color, Move) :- aiOp(Move, player(Color,_)).
 
-atome_json_vers_cellule(' ', v).
-atome_json_vers_cellule('r', r).
-atome_json_vers_cellule('a', a).
+% ====== BOARD JSON ======
+get_board_json(Board) :-
+    findall(ColData, (between(1,7,I), column(I, ColData, _)), Cols),
+    maplist(reverse, Cols, RevCols),
+    transpose_matrix(RevCols, Board).
+
+transpose_matrix([], []).
+transpose_matrix([[]|_], []) :- !.
+transpose_matrix(Matrix, [Row|Rows]) :-
+    findall(E, (member(Col, Matrix), nth1(1, Col, E)), Row),
+    maplist(remove_head, Matrix, Rest),
+    transpose_matrix(Rest, Rows).
+
+remove_head([_|T], T).
+
+make_empty_board(Board) :-
+    length(Row, 7), maplist(=(' '), Row),
+    length(Board, 6), maplist(=(Row), Board).
+
+convert_cell('e', ' ').
+convert_cell('r', 'r').
+convert_cell('y', 'y').

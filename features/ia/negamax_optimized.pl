@@ -250,7 +250,10 @@ eval_position(Pos, Mask, Score) :-
     open_lines_score(Pos, OppPos, LinesS),
 
     % Poids : défendre un Win1 de l'adversaire est plus urgent
-    ForkBonus is (MyWin1 >= 2 -> 5000 ; 0),
+    (   MyWin1 >= 2
+    ->  ForkBonus = 5000
+    ;   ForkBonus = 0
+    ),
     Score is MyWin1 * 9000
           - OpWin1 * 12000
           + MyThreat3 * 300

@@ -1,182 +1,165 @@
-const gameBoardElement = document.getElementById('game-board');
-const columnHeadersElement = document.getElementById('column-headers');
-const gameStatusElement = document.getElementById('game-status');
-const currentPlayerElement = document.getElementById('current-player');
-const resetButton = document.getElementById('reset-button');
-const messageArea = document.getElementById('message-area');
-
-let currentBoard = [];
-let currentPlayer = 'r'; // 'r' pour rouge (humain), 'a' pour jaune (IA)
-let gameActive = true;
-
-const IA_PLAYER = 'a';
-const HUMAN_PLAYER = 'r';
-
 const NUM_ROWS = 6;
 const NUM_COLS = 7;
 
-// --- Fonctions de communication avec Prolog ---
+let currentBoard = [];
+let currentPlayer = 'r';
+let gameActive = true;
+let gameMode = null;
+let iaTypeRed = 'human';
+let iaTypeYellow = 'aiRand';
 
-async function callPrologApi(endpoint, data = {}, method = 'POST') {
-    messageArea.textContent = ''; // Effacer messages précédents
-    try {
-        const response = await fetch(`/api/${endpoint}`, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Erreur HTTP! Status: ${response.status}, Message: ${errorData.error || response.statusText}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Erreur lors de l'appel à l'API Prolog:", error);
-        messageArea.textContent = `Erreur: ${error.message}. Consultez la console.`;
-        gameActive = false;
-        return null;
-    }
+function showMenu() {
+    document.getElementById('game-mode-selector').classList.remove('hidden');
+    document.getElementById('ia-selector').classList.add('hidden');
+    document.getElementById('game-container').classList.add('hidden');
+}
+
+function showHumanVsIA() {
+    gameMode = 'human-vs-ia';
+    iaTypeRed = 'human';
+    document.getElementById('game-mode-selector').classList.add('hidden');
+    document.getElementById('ia-selector').classList.remove('hidden');
+    document.getElementById('human-vs-ia-section').classList.remove('hidden');
+    document.getElementById('ia-vs-ia-section').classList.add('hidden');
+}
+
+function showIAVsIA() {
+    gameMode = 'ia-vs-ia';
+    document.getElementById('game-mode-selector').classList.add('hidden');
+    document.getElementById('ia-selector').classList.remove('hidden');
+    document.getElementById('human-vs-ia-section').classList.add('hidden');
+    document.getElementById('ia-vs-ia-section').classList.remove('hidden');
+}
+
+function showGame() {
+    document.getElementById('ia-selector').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+}
+
+async function callAPI(endpoint, data = {}) {
+    const res = await fetch(`/api/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return await res.json();
 }
 
 async function initGame() {
+    const data = await callAPI('init_game', { red: iaTypeRed, yellow: iaTypeYellow });
+    console.log('Board from API:', data.board);
+    console.table(data.board);
+
+    currentBoard = data.board;
+    currentPlayer = data.currentPlayer;
     gameActive = true;
-    messageArea.textContent = '';
-    gameStatusElement.textContent = 'Statut du jeu: En cours';
-    gameStatusElement.className = ''; // Supprimer les classes de statut précédentes
 
-    const data = await callPrologApi('init_game', {});
-    if (data) {
-        currentBoard = data.board;
-        currentPlayer = data.player;
-        updateBoardUI();
-        updatePlayerDisplay();
+    updateBoardUI();
+    updatePlayerDisplay();
+
+    if ((currentPlayer === 'y' && iaTypeYellow !== 'human') ||
+        (currentPlayer === 'r' && iaTypeRed !== 'human')) {
+        setTimeout(playIAMove, 800);
     }
 }
 
-async function makeMove(column) {
-    if (!gameActive || currentPlayer !== HUMAN_PLAYER) return; // Seul l'humain peut cliquer
+async function playHumanMove(col) {
+    if (!gameActive) return;
+    if ((currentPlayer === 'r' && iaTypeRed !== 'human') ||
+        (currentPlayer === 'y' && iaTypeYellow !== 'human')) return;
 
-    const moveData = {
-        column: column,
-        player: currentPlayer,
-        currentBoard: currentBoard
-    };
-    const data = await callPrologApi('move', moveData);
-
-    if (data) {
-        currentBoard = data.board;
-        currentPlayer = data.player;
-        updateBoardUI();
-        checkGameEnd(data.status);
-
-        if (gameActive && currentPlayer === IA_PLAYER) {
-            // Si c'est le tour de l'IA et le jeu est toujours actif
-            setTimeout(callAIMove, 1000); // Petite pause pour simuler la "réflexion"
-        }
-    }
+    const data = await callAPI('play_move', { column: col });
+    handleMove(data);
 }
 
-async function callAIMove() {
-    if (!gameActive || currentPlayer !== IA_PLAYER) return;
-
-    gameStatusElement.textContent = "Statut du jeu: L'IA réfléchit...";
-    gameStatusElement.classList.add('status-ia');
-
-    const aiMoveData = {
-        player: IA_PLAYER,
-        opponent: HUMAN_PLAYER,
-        currentBoard: currentBoard
-    };
-    const data = await callPrologApi('ai_move', aiMoveData);
-
-    if (data) {
-        currentBoard = data.board;
-        currentPlayer = data.player; // Devrait être le tour de l'humain maintenant
-        updateBoardUI();
-        checkGameEnd(data.status);
-    }
+async function playIAMove() {
+    if (!gameActive) return;
+    const data = await callAPI('ia_move');
+    handleMove(data);
 }
 
-// --- Fonctions d'Actualisation de l'UI ---
+function handleMove(data) {
+    currentBoard = data.board;
+    currentPlayer = data.nextPlayer;
+
+    updateBoardUI();
+    updatePlayerDisplay();
+
+    if (data.status === 'finished') {
+        gameActive = false;
+        document.getElementById('game-status').textContent =
+            data.winner === 'r' ? '🔴 Red gagne !' :
+            data.winner === 'y' ? '🟡 Yellow gagne !' : 'Match nul !';
+        return;
+    }
+
+    if (gameMode === 'ia-vs-ia') {
+        document.getElementById('next-move-button').classList.remove('hidden');
+    } else if (
+        (currentPlayer === 'y' && iaTypeYellow !== 'human') ||
+        (currentPlayer === 'r' && iaTypeRed !== 'human')
+    ) {
+        setTimeout(playIAMove, 800);
+    }
+}
 
 function updateBoardUI() {
-    columnHeadersElement.innerHTML = '';
-    gameBoardElement.innerHTML = '';
+    const board = document.getElementById('game-board');
+    const headers = document.getElementById('column-headers');
 
-    // Créer les en-têtes de colonne cliquables
-    for (let c = 0; c < NUM_COLS; c++) {
-        const header = document.createElement('div');
-        header.classList.add('column-header');
-        header.textContent = c + 1;
-        header.dataset.column = c + 1;
-        header.addEventListener('click', handleColumnClick);
-        columnHeadersElement.appendChild(header);
+    board.innerHTML = '';
+    headers.innerHTML = '';
+
+    // Column headers
+    for (let c = 1; c <= NUM_COLS; c++) {
+        const h = document.createElement('div');
+        h.className = 'column-header';
+        h.textContent = c;
+        if ((currentPlayer === 'r' && iaTypeRed === 'human') ||
+            (currentPlayer === 'y' && iaTypeYellow === 'human')) {
+            h.onclick = () => playHumanMove(c);
+        }
+        headers.appendChild(h);
     }
 
-    // Rendre les cellules du plateau
+    // Cells
     for (let r = 0; r < NUM_ROWS; r++) {
         for (let c = 0; c < NUM_COLS; c++) {
             const cell = document.createElement('div');
-            cell.classList.add('cell');
-            const cellValue = currentBoard[r][c];
-            if (cellValue === 'r') {
-                cell.classList.add('player-r');
-            } else if (cellValue === 'a') {
-                cell.classList.add('player-a');
-            }
-            gameBoardElement.appendChild(cell);
+            cell.className = 'cell';
+            if (currentBoard[r][c] === 'r') cell.classList.add('player-r');
+            if (currentBoard[r][c] === 'y') cell.classList.add('player-y');
+            board.appendChild(cell);
         }
     }
 }
 
 function updatePlayerDisplay() {
-    currentPlayerElement.textContent = currentPlayer === 'r' ? 'Rouge' : 'Jaune';
-    currentPlayerElement.style.color = currentPlayer === 'r' ? '#dc3545' : '#ffc107';
+    document.getElementById('current-player').textContent =
+        currentPlayer === 'r' ? '🔴 Red' : '🟡 Yellow';
 }
 
-function checkGameEnd(status) {
-    gameStatusElement.classList.remove('status-winner', 'status-draw', 'status-invalid', 'status-ia');
-    if (status.winner) {
-        gameActive = false;
-        if (status.winner === HUMAN_PLAYER) {
-            gameStatusElement.textContent = "Statut du jeu: Le joueur Rouge a gagné!";
-            gameStatusElement.classList.add('status-winner');
-        } else {
-            gameStatusElement.textContent = "Statut du jeu: L'IA Jaune a gagné!";
-            gameStatusElement.classList.add('status-winner');
-        }
-    } else if (status === 'draw') {
-        gameActive = false;
-        gameStatusElement.textContent = "Statut du jeu: Égalité!";
-        gameStatusElement.classList.add('status-draw');
-    } else if (status === 'invalid_move') {
-        messageArea.textContent = "Mouvement invalide. Colonne pleine ou inexistante.";
-        messageArea.classList.add('status-invalid');
-        // Ne change pas le joueur si le mouvement est invalide
-    } else { // 'playing'
-        gameStatusElement.textContent = 'Statut du jeu: En cours';
-        updatePlayerDisplay();
+// Events
+document.getElementById('btn-human-vs-ia').onclick = showHumanVsIA;
+document.getElementById('btn-ia-vs-ia').onclick = showIAVsIA;
+
+document.getElementById('btn-start-game').onclick = () => {
+    if (gameMode === 'human-vs-ia') {
+        iaTypeYellow = document.getElementById('ia-opponent-type').value;
+    } else {
+        iaTypeRed = document.getElementById('ia1-type').value;
+        iaTypeYellow = document.getElementById('ia2-type').value;
     }
-}
+    showGame();
+    initGame();
+};
 
-// --- Gestionnaires d'événements ---
+document.getElementById('next-move-button').onclick = () => {
+    document.getElementById('next-move-button').classList.add('hidden');
+    playIAMove();
+};
 
-function handleColumnClick(event) {
-    if (!gameActive || currentPlayer !== HUMAN_PLAYER) {
-        if (!gameActive) messageArea.textContent = "La partie est terminée. Cliquez sur 'Recommencer la partie'.";
-        else if (currentPlayer !== HUMAN_PLAYER) messageArea.textContent = "Ce n'est pas votre tour!";
-        return;
-    }
+document.getElementById('btn-back-ia').onclick = showMenu;
+document.getElementById('back-to-menu-button').onclick = showMenu;
 
-    const column = parseInt(event.target.dataset.column);
-    if (!isNaN(column)) {
-        makeMove(column);
-    }
-}
-
-resetButton.addEventListener('click', initGame);
-
-// --- Démarrage du jeu ---
-document.addEventListener('DOMContentLoaded', initGame);
+document.addEventListener('DOMContentLoaded', showMenu);
