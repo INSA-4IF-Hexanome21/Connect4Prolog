@@ -1,0 +1,208 @@
+1 ?- run_all_stats(10).
+==============================
+MATCHUP : aiMinMax VS aiRand
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiMinMax :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 6.40
+  Temps moyen / coup : 6225.71 ms
+
+aiRand :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 6.40
+  Temps moyen / coup : 1.27 ms
+
+==============================
+MATCHUP (inverse) : aiRand VS aiMinMax
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiRand :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 3.40
+  Temps moyen / coup : 0.03 ms
+
+aiMinMax :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 4.40
+  Temps moyen / coup : 3259.89 ms
+
+
+==============================
+MATCHUP : aiMinMax VS aiV2
+==============================
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiMinMax :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 11.70
+  Temps moyen / coup : 9504.00 ms
+
+aiV2 :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 11.70
+  Temps moyen / coup : 1.30 ms
+
+==============================
+MATCHUP (inverse) : aiV2 VS aiMinMax
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiV2 :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 8.60
+  Temps moyen / coup : 0.84 ms
+
+aiMinMax :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 9.60
+  Temps moyen / coup : 7452.09 ms
+
+
+==============================
+MATCHUP : aiMinMax VS aiOp
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiMinMax :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 19.00
+  Temps moyen / coup : 8358.15 ms
+
+aiOp :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 19.00
+  Temps moyen / coup : 9455.52 ms
+
+==============================
+MATCHUP (inverse) : aiOp VS aiMinMax
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiOp :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 19.00
+  Temps moyen / coup : 13382.99 ms
+
+aiMinMax :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 19.00
+  Temps moyen / coup : 14801.75 ms
+
+
+==============================
+MATCHUP : aiRand VS aiV2
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiRand :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 6.80
+  Temps moyen / coup : 0.02 ms
+
+aiV2 :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 7.80
+  Temps moyen / coup : 1.03 ms
+
+==============================
+MATCHUP (inverse) : aiV2 VS aiRand
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiV2 :
+  Victoires : 7 (70.00 %)
+  Moyenne coups / partie : 10.50
+  Temps moyen / coup : 1.39 ms
+
+aiRand :
+  Victoires : 3 (30.00 %)
+  Moyenne coups / partie : 10.80
+  Temps moyen / coup : 0.06 ms
+
+
+==============================
+MATCHUP : aiRand VS aiOp
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiRand :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 3.70
+  Temps moyen / coup : 0.04 ms
+
+aiOp :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 4.70
+  Temps moyen / coup : 6232.29 ms
+
+==============================
+MATCHUP (inverse) : aiOp VS aiRand
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiOp :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 6.40
+  Temps moyen / coup : 9360.59 ms
+
+aiRand :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 6.40
+  Temps moyen / coup : 0.08 ms
+
+
+==============================
+MATCHUP : aiV2 VS aiOp
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiV2 :
+  Victoires : 1 (10.00 %)
+  Moyenne coups / partie : 11.70
+  Temps moyen / coup : 2.13 ms
+
+aiOp :
+  Victoires : 9 (90.00 %)
+  Moyenne coups / partie : 12.60
+  Temps moyen / coup : 16416.84 ms
+
+==============================
+MATCHUP (inverse) : aiOp VS aiV2
+==============================
+
+--- RESULTATS ---
+Nombre de parties : 10
+
+aiOp :
+  Victoires : 10 (100.00 %)
+  Moyenne coups / partie : 9.80
+  Temps moyen / coup : 14312.27 ms
+
+aiV2 :
+  Victoires : 0 (0.00 %)
+  Moyenne coups / partie : 9.80
+  Temps moyen / coup : 2.10 ms

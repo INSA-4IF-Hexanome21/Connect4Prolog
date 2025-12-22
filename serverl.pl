@@ -64,6 +64,7 @@ h_init_game(Request) :-
 
 :- http_handler(root(api/play_move), h_play_move, [methods([post])]).
 h_play_move(Request) :-
+    format(user_error, 'DEBUG: play_move handler called~n', []),
     catch(
         (
             http_read_json_dict(Request, Data),
@@ -89,29 +90,59 @@ h_play_move(Request) :-
         )
     ).
 
-h_ia_move(Request) :-
+:- http_handler(root(api/ia_move), h_ia_move, [methods([post])]).
+h_ia_move(_Request) :-
+    format(user_error, 'DEBUG: ia_move handler called~n', []),
     catch(
-        (
-            % Step 1: get current player
-            (currentPlayer(Color) -> format('Current player: ~w~n', [Color]) ; throw(error(no_current_player))),
-            
-            % Step 2: get player type
-            (get_player_type(Color, Type) -> format('Player type: ~w~n', [Type]) ; throw(error(no_player_type))),
-            
-            % Step 3: choose IA move
-            (ia_choose_move(Type, Color, Move) -> format('IA chooses: ~w~n', [Move]) ; throw(error(ia_failed))),
-            
-            % Step 4: play move
-            (playMove(Move, Color, _) -> format('Played move: ~w~n', [Move]) ; throw(error(play_failed))),
-            
-            % Step 5: get board
+        ( 
+            http_read_json_dict(_Request, Data),
+            % Ensure we have a current player
+            ( currentPlayer(Color) -> true ; (
+                make_empty_board(Board),
+                reply_json(json{error:'no_current_player', board:Board, status:'error'}),
+                !, fail
+            ) ),
+
+            % Ensure the player's type is known
+            ( get_player_type(Color, Type) -> true ; (
+                make_empty_board(Board),
+                reply_json(json{error:'no_player_type', board:Board, status:'error'}),
+                !, fail
+            ) ),
+
+            % Choose IA move
+            ( ia_choose_move(Type, Color, Move) -> true ; (
+                format(user_error, 'IA choose move failed: type=~w color=~w move=~w ~n', [Type, Color, Move]),
+                make_empty_board(Board),
+                reply_json(json{error:'ia_choose_failed', board:Board, status:'error'}),
+                !, fail
+            ) ),
+
+            % Play the move
+            ( playMove(Move, Color, _) -> true ; (
+                format(user_error, 'playMove failed: move=~w color=~w~n', [Move, Color]),
+                make_empty_board(Board),
+                reply_json(json{error:'play_failed', board:Board, status:'error'}),
+                !, fail
+            ) ),
+
+            % Build and send normal response
+            format(user_error, 'IA move played successfully~n', []),
             get_board_json(Board),
-            
-            % Step 6: check if game over
-            ( isOver(Color, Move) -> Status = finished, Winner = Color ; next_player_api, Status = playing, Winner = none ),
+            format(user_error, 'column: ~w~n', [Move]),
+            format(user_error, 'board: ~w~n', [Board]),
+
+            ( isOver(Color, Move) -> 
+                Status = finished, Winner = Color 
+            ; 
+                next_player_api, Status = playing, Winner = none 
+            ),
             currentPlayer(Next),
             
-            % Step 7: reply JSON
+            format(user_error, 'status: ~w~n', [Status]),
+            format(user_error, 'winner: ~w~n', [Winner]),
+            format(user_error, 'nextPlayer: ~w~n', [Next]),
+            
             reply_json(json{
                 column: Move,
                 board: Board,
@@ -124,13 +155,12 @@ h_ia_move(Request) :-
         ),
         E,
         (
-            print_message(error,E),
+            message_to_string(E, Msg),
+            format(user_error, 'IA handler exception: ~w~n', [Msg]),
             make_empty_board(Board),
-            reply_json(json{error:'IA failed', board:Board, status:'error'})
+            reply_json(json{error:'IA exception', detail:Msg, board:Board, status:'error'})
         )
     ).
-
-
 
 % ====== GAME LOGIC ======
 init_board_api :-
@@ -166,16 +196,68 @@ valid_column(Col) :-
 
 % ====== IA ======
 ia_choose_move(Type, Color, Move) :-
-    catch(call_ai(Type, Color, M), E, (print_message(error,E), fail)),
-    ( valid_column(M) -> Move = M
-    ; findall(C, valid_column(C), ValidCols),
-      random_member(Move, ValidCols)
+    format(user_error, 'DEBUG: ia_choose_move called with Type=~w, Color=~w~n', [Type, Color]),
+    % Convertir le Type en atom si c'est une string
+    ( atom(Type) -> TypeAtom = Type ; atom_string(TypeAtom, Type) ),
+    format(user_error, 'DEBUG: TypeAtom=~w~n', [TypeAtom]),
+    catch(
+        call_ai(TypeAtom, Color, M),
+        E,
+        (
+            format(user_error, 'ERROR in call_ai: ~w~n', [E]),
+            fail
+        )
+    ),
+    !,
+    format(user_error, 'DEBUG: call_ai returned M=~w~n', [M]),
+    ( var(M) ->
+        format(user_error, 'WARNING: call_ai returned unbound variable~n', []),
+        fail
+    ; true ),
+    ( valid_column(M) -> 
+        Move = M,
+        format(user_error, 'DEBUG: Move is valid: ~w~n', [Move])
+    ; 
+        format(user_error, 'WARNING: Invalid move ~w, choosing random~n', [M]),
+        findall(C, valid_column(C), ValidCols),
+        format(user_error, 'DEBUG: Valid columns: ~w~n', [ValidCols]),
+        ( ValidCols = [] ->
+            format(user_error, 'ERROR: No valid columns found!~n', []),
+            fail
+        ;
+            random_member(Move, ValidCols),
+            format(user_error, 'DEBUG: Random move chosen: ~w~n', [Move])
+        )
     ).
 
-call_ai('aiRand', Color, Move) :- aiV1(Move, player(Color,_)).
-call_ai('aiV2', Color, Move) :- aiV2(Move, player(Color,_)).
-call_ai('aiMinMax', Color, Move) :- ai(Move, player(Color,_)).
-call_ai('aiOp', Color, Move) :- aiOp(Move, player(Color,_)).
+% Les clauses utilisent maintenant des ATOMS
+call_ai(aiRand, Color, Move) :- 
+    format(user_error, 'DEBUG: Calling aiV1 for aiRand with Color=~w~n', [Color]),
+    !,
+    aiV1(Move, player(Color,_)),
+    format(user_error, 'DEBUG: aiV1 returned Move=~w~n', [Move]).
+    
+call_ai(aiV2, Color, Move) :- 
+    format(user_error, 'DEBUG: Calling aiV2 with Color=~w~n', [Color]),
+    !,
+    aiV2(Move, player(Color,_)),
+    format(user_error, 'DEBUG: aiV2 returned Move=~w~n', [Move]).
+    
+call_ai(aiMinMax, Color, Move) :- 
+    format(user_error, 'DEBUG: Calling ai (MinMax) with Color=~w~n', [Color]),
+    !,
+    ai(Move, player(Color,_)),
+    format(user_error, 'DEBUG: ai returned Move=~w~n', [Move]).
+    
+call_ai(aiOp, Color, Move) :- 
+    format(user_error, 'DEBUG: Calling aiOp with Color=~w~n', [Color]),
+    !,
+    aiOp(Move, player(Color,_)),
+    format(user_error, 'DEBUG: aiOp returned Move=~w~n', [Move]).
+
+call_ai(Type, Color, _) :-
+    format(user_error, 'ERROR: Unknown AI type: ~w for color ~w~n', [Type, Color]),
+    fail.
 
 % ====== BOARD JSON ======
 get_board_json(Board) :-

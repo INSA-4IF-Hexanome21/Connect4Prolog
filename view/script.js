@@ -5,6 +5,7 @@ let currentBoard = [];
 let currentPlayer = 'r';
 let gameActive = true;
 let gameMode = null;
+let moveInProgress = false;
 let iaTypeRed = 'human';
 let iaTypeYellow = 'aiRand';
 
@@ -17,6 +18,16 @@ function showMenu() {
 function showHumanVsIA() {
     gameMode = 'human-vs-ia';
     iaTypeRed = 'human';
+    document.getElementById('game-mode-selector').classList.add('hidden');
+    document.getElementById('ia-selector').classList.remove('hidden');
+    document.getElementById('human-vs-ia-section').classList.remove('hidden');
+    document.getElementById('ia-vs-ia-section').classList.add('hidden');
+}
+
+function showHumanVsHuman() {
+    gameMode = 'human-vs-human';
+    iaTypeRed = 'human';
+    iaTypeYellow = 'human';
     document.getElementById('game-mode-selector').classList.add('hidden');
     document.getElementById('ia-selector').classList.remove('hidden');
     document.getElementById('human-vs-ia-section').classList.remove('hidden');
@@ -42,6 +53,15 @@ async function callAPI(endpoint, data = {}) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
+    
+    console.log(res);
+
+    if (!res.ok) {
+        const errorText = await res.text();
+        console.error("API error:", res.status, errorText);
+        throw new Error(`API ${endpoint} failed (${res.status})`);
+    }
+
     return await res.json();
 }
 
@@ -54,6 +74,7 @@ async function initGame() {
     currentPlayer = data.currentPlayer;
     gameActive = true;
 
+    createBoardUI();
     updateBoardUI();
     updatePlayerDisplay();
 
@@ -65,20 +86,44 @@ async function initGame() {
 
 async function playHumanMove(col) {
     if (!gameActive) return;
+    if (moveInProgress) return;
     if ((currentPlayer === 'r' && iaTypeRed !== 'human') ||
         (currentPlayer === 'y' && iaTypeYellow !== 'human')) return;
 
-    const data = await callAPI('play_move', { column: col });
-    handleMove(data);
+    moveInProgress = true;
+    updatePlayerDisplay();
+
+    try {
+        const data = await callAPI('play_move', { column: col });
+        handleMove(data);
+    } catch (err) {
+        console.warn("Human move refused:", err.message);
+    } finally {
+        moveInProgress = false;
+        updatePlayerDisplay();
+    }
 }
 
 async function playIAMove() {
     if (!gameActive) return;
-    const data = await callAPI('ia_move');
-    handleMove(data);
+
+    try {
+        const data = await callAPI('ia_move');
+        handleMove(data);
+    }   catch (err) {
+        console.warn("IA move refused:", err.message);
+    }
+    
 }
 
 function handleMove(data) {
+    if (!data || !data.board) {
+        console.error('Invalid response from server', data);
+        document.getElementById('game-status').textContent = 'Erreur serveur';
+        gameActive = false;
+        return;
+    }
+
     currentBoard = data.board;
     currentPlayer = data.nextPlayer;
 
@@ -99,15 +144,20 @@ function handleMove(data) {
         (currentPlayer === 'y' && iaTypeYellow !== 'human') ||
         (currentPlayer === 'r' && iaTypeRed !== 'human')
     ) {
-        setTimeout(playIAMove, 800);
+        moveInProgress = true;  
+        setTimeout(async () => {
+            try {
+                await playIAMove();
+            } finally {
+                moveInProgress = false;  
+            }
+        }, 800);
     }
 }
 
-function updateBoardUI() {
-    const board = document.getElementById('game-board');
+function createBoardUI() {
     const headers = document.getElementById('column-headers');
 
-    board.innerHTML = '';
     headers.innerHTML = '';
 
     // Column headers
@@ -115,12 +165,21 @@ function updateBoardUI() {
         const h = document.createElement('div');
         h.className = 'column-header';
         h.textContent = c;
-        if ((currentPlayer === 'r' && iaTypeRed === 'human') ||
-            (currentPlayer === 'y' && iaTypeYellow === 'human')) {
-            h.onclick = () => playHumanMove(c);
-        }
+        h.dataset.col = c;
         headers.appendChild(h);
     }
+
+    headers.onclick = (e) => {
+        const col = e.target.dataset.col;
+        if (!col) return;
+        playHumanMove(Number(col));
+    };
+}
+
+function updateBoardUI() {
+    const board = document.getElementById('game-board');
+
+    board.innerHTML = '';
 
     // Cells
     for (let r = 0; r < NUM_ROWS; r++) {
@@ -135,11 +194,19 @@ function updateBoardUI() {
 }
 
 function updatePlayerDisplay() {
-    document.getElementById('current-player').textContent =
-        currentPlayer === 'r' ? '🔴 Red' : '🟡 Yellow';
+    const display = document.getElementById('current-player');
+    display.textContent = currentPlayer === 'r' ? '🔴 Red' : '🟡 Yellow';
+    
+    if (moveInProgress) {
+        display.textContent += ' (IA réfléchit...)';
+        display.style.opacity = '0.6';
+    } else {
+        display.style.opacity = '1';
+    }
 }
 
 // Events
+document.getElementById('btn-human-vs-human').onclick = showHumanVsHuman;
 document.getElementById('btn-human-vs-ia').onclick = showHumanVsIA;
 document.getElementById('btn-ia-vs-ia').onclick = showIAVsIA;
 

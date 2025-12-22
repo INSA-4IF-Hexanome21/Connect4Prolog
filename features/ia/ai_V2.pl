@@ -12,8 +12,8 @@ aiV2(Move,_) :-
         not(IndexMax == 6),
         !
     )
-    ),write("AI V2 Play : "),
-    writeln(Move).
+    ),
+    format(user_error, "AI V2 Play : ~w~n",[Move]).
 
 verifCol(Move) :- between(1,7,Move),
         (

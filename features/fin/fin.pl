@@ -137,11 +137,11 @@ isOver(Player, Column) :-
     ;   rightDiagonalVictory(Player, Column)
     ),
     !,
-    write(Player), writeln(' has won the match !').
+    format(user_error, '~w has won the match !~n', [Player]).
 
 isOver(_, _) :-
     isTie(),
-    writeln('It\'s a tie !').
+    format(user_error, 'It\'s a tie !', []).
 
 isTie() :-
     \+ (column(_, _, LastPos), LastPos < 6).

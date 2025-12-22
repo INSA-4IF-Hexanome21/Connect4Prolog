@@ -12,7 +12,7 @@
 
 largeur(7).
 hauteur(6).
-profondeur_recherche(9).
+profondeur_recherche(12).
 
 % 7 bits par colonne (6 lignes + 1 bit “sentinelle”).
 % Ces valeurs correspondent à 7x6 avec sentinelle (bitboard standard).
