@@ -19,13 +19,13 @@ initBoard.
 ```
 3. À chaque tour, saisissez un numéro de colonne entre 1 et 7. Le jeu s’arrête dès qu’un joueur aligne 4 pions ou quand le plateau est plein.
 
-<!-- ## Interface web (HTTP + front statique)
+## Interface web 
 
 1. Démarrer le serveur HTTP (port 8080) :
 ```bash
 swipl -s serverl.pl -g start_server
 ```
-2. Ouvrir http://localhost:8080 pour l’interface (fichiers dans [view/](view/index.html)). -->
+2. Ouvrir http://localhost:8080 pour l’interface (fichiers dans [view/](view/index.html)).
 
 <!-- ## Tests de performance
 
