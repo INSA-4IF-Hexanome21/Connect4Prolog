@@ -54,11 +54,9 @@ play :-
     displayBoard, 
 
     (   isOver(Color, Move) -> 
-        write(Color), writeln(' has won the match !'),
         true % on stoppe le jeu
     ;
-        isTie ->
-        writeln('It\'s a tie !')
+        isTie -> true
     ;
         nextPlayer,
         play  % on continue de jouer

@@ -51,7 +51,7 @@ filtrer_scores_jouables_aux([Score|Reste], NumCol, [ScoreFiltre|ResteFiltre]) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ia_choisir_coup(CouleurJoueur, Mouvement) :-
-    format(user_error, '~n=== IA NEGAMAX ACTIVÉE ===~n', []),
+    format(user_error, '~n=== IA NEGAMAX ACTIVEE ===~n', []),
     format(user_error, 'Couleur joueur: ~w~n', [CouleurJoueur]),
     convertir_jeton(CouleurJoueur, JetonNegamax),
     format(user_error, 'Jeton Negamax: ~w~n', [JetonNegamax]),
@@ -61,24 +61,24 @@ ia_choisir_coup(CouleurJoueur, Mouvement) :-
     analyser(PlateauNegamax, JetonNegamax, ScoresBruts),
     format(user_error, 'Scores bruts: ~w~n', [ScoresBruts]),
     filtrer_scores_jouables(ScoresBruts, ScoresFiltres),
-    format(user_error, 'Scores filtrés: ~w~n', [ScoresFiltres]),
+    format(user_error, 'Scores filtres: ~w~n', [ScoresFiltres]),
     (   trouver_meilleur_index(ScoresFiltres, 1, Mouvement)
     ->  format(user_error, 'Meilleur coup: colonne ~w~n', [Mouvement]),
         (   colonne_jouable_main(Mouvement)
-        ->  format(user_error, 'Colonne ~w confirmée jouable~n', [Mouvement])
+        ->  format(user_error, 'Colonne ~w confirmee jouable~n', [Mouvement])
         ;   format(user_error, 'ERREUR: Colonne ~w non jouable~n', [Mouvement]),
             fail
         ),
         (   compteur_noeuds(N)
-        ->  format(user_error, 'Noeuds explorés: ~w~n', [N])
+        ->  format(user_error, 'Noeuds explores: ~w~n', [N])
         ;   true
         )
-    ;   format(user_error, 'Aucun coup valide trouvé~n', []),
+    ;   format(user_error, 'Aucun coup valide trouve~n', []),
         fail
     ).
 
 ia_choisir_coup(_, Mouvement) :-
-    format(user_error, 'Fallback activé~n', []),
+    format(user_error, 'Fallback active~n', []),
     repeat,
     random(1, 8, Mouvement),
     colonne_jouable_main(Mouvement),
