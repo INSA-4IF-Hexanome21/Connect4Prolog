@@ -1,4 +1,4 @@
-:- consult('features/ia/negamax_optimized.pl').
+:- consult('negamax_optimized.pl').
 
 obtenir_colonne(N, D) :- column(N, D, _).
 

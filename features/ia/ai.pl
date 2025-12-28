@@ -1,4 +1,4 @@
-:- consult('features/ia/negamax.pl').
+:- consult('negamax.pl').
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% -----   ADAPTATEUR (BRIDGE)   ------------------------- 

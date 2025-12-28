@@ -1,6 +1,6 @@
-% convertSymbol('R', '🔴').
-% convertSymbol('Y', '🟡').
-% convertSymbol('e', '⬜').
+% % convertSymbol('R', '🔴').
+% % convertSymbol('Y', '🟡').
+% % convertSymbol('e', '⬜').
 convertSymbol('R', 'R').
 convertSymbol('Y', 'Y').
 convertSymbol('e', ' ').
