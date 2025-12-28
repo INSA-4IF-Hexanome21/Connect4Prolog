@@ -246,13 +246,13 @@ call_ai(aiV2, Color, Move) :-
 call_ai(aiMinMax, Color, Move) :- 
     format(user_error, 'DEBUG: Calling ai (MinMax) with Color=~w~n', [Color]),
     !,
-    ai(Move, player(Color,_)),
+    ia_choisir_coup(Color, Move),
     format(user_error, 'DEBUG: ai returned Move=~w~n', [Move]).
     
 call_ai(aiOp, Color, Move) :- 
     format(user_error, 'DEBUG: Calling aiOp with Color=~w~n', [Color]),
     !,
-    aiOp(Move, player(Color,_)),
+    ia_op_choisir_coup(Color, Move),
     format(user_error, 'DEBUG: aiOp returned Move=~w~n', [Move]).
 
 call_ai(Type, Color, _) :-

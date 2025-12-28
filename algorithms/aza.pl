@@ -13,12 +13,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ai(Move, player(Color, Strategy)) :-
-    format('AI (~w) is thinking using strategy: ~w...~n', [Color, Strategy]),
+    format(user_error, ' AI (~w) is thinking using strategy: ~w...~n', [Color, Strategy]),
 
     % Call the bridge module
     ia_choose_move(Color, Move, Strategy),
 
-    format('AI plays column : ~w~n', [Move]).
+    format(user_error, ' AI plays column : ~w~n', [Move]).
 
 askPlayerMove(Move,_) :-
     repeat,
@@ -96,11 +96,11 @@ initBoard :-
 initPlayer(PlayerR, PlayerJ) :-
     writeln('--- Red Player (RED) ---'),
     selectPlayerType(TypeR, StrategyR), % Récupère le type et la stratégie
-    nl, format('Red Player is ~w with strategy ~w~n', [TypeR, StrategyR]), % Affichage mis à jour
+    nl, format(user_error, ' Red Player is ~w with strategy ~w~n', [TypeR, StrategyR]), % Affichage mis à jour
 
     writeln('--- Yellow Player (YELLOW) ---'),
     selectPlayerType(TypeJ, StrategyJ), % Récupère le type et la stratégie
-    nl, format('Yellow Player is ~w with strategy ~w~n', [TypeJ, StrategyJ]), % Affichage mis à jour
+    nl, format(user_error, ' Yellow Player is ~w with strategy ~w~n', [TypeJ, StrategyJ]), % Affichage mis à jour
 
     PlayerR = player('RED',TypeR,StrategyR), % Modification du terme joueur
     PlayerJ = player('YELLOW',TypeJ,StrategyJ). % Modification du terme joueur

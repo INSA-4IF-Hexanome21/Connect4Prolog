@@ -22,6 +22,15 @@
 <!-- ================= IA SELECTOR ================= -->
 <div id="ia-selector" class="section hidden">
 
+    <div id="human-vs-human-section" class="hidden">
+        <h2>Choisir les joueurs</h2>
+        <label>Rouge :</label>
+        <input id="red-player-name"/>
+
+        <label>Jaune :</label>
+        <input id="yellow-player-name"/>
+    </div>
+
     <div id="human-vs-ia-section" class="hidden">
         <h2>Choisir l'IA</h2>
         <select id="ia-opponent-type">
@@ -59,8 +68,8 @@
 
 <!-- ================= GAME ================= -->
 <div id="game-container" class="section hidden">
-    <div id="game-status">Status: Playing</div>
-    <div>Joueur : <span id="current-player">🔴 Red</span></div>
+    <div id="game-status">Status: En jeu</div>
+    <div>Joueur : <span id="current-player">🔴 Rouge</span></div>
 
     <div id="board-container">
         <div id="column-headers"></div>
@@ -69,6 +78,7 @@
 
     <div class="game-controls">
         <button id="next-move-button" class="primary-button hidden">⏭ Prochain coup</button>
+        <button id="play-again-button" class="primary-button hidden">↺ Rejouer</button>
         <button id="back-to-menu-button" class="secondary-button">Menu</button>
     </div>
 </div>

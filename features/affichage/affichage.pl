@@ -1,6 +1,9 @@
-convertSymbol('R', '🔴').
-convertSymbol('Y', '🟡').
-convertSymbol('e', '⬜').
+% convertSymbol('R', '🔴').
+% convertSymbol('Y', '🟡').
+% convertSymbol('e', '⬜').
+convertSymbol('R', 'R').
+convertSymbol('Y', 'Y').
+convertSymbol('e', ' ').
 convertSymbol(X, X).
 convertPlayer(1, 'R').
 convertPlayer(2, 'Y').
@@ -12,16 +15,18 @@ displayBoard :-
     forall(between(1,6,Row),
         (
             % Pour chaque colonne de 0 à 6
+            write('|'),
             forall(between(1,7,Col),
                 (
                     column(Col, ColData,LastPos),
                     Pos is 7-Row,
                     nth1(Pos, ColData, Cell),
                     convertSymbol(Cell, Symbol),
-                    write(Symbol), write('||')
+                    write(Symbol), write('|')
                 )
             ),
             nl
         )
     ),
-    write('1||2||3||4||5||6||7||'), nl, nl.
+    write('+-------------+'), nl, 
+    write('|1|2|3|4|5|6|7|'), nl, nl.

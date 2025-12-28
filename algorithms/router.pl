@@ -60,7 +60,7 @@ ia_choose_move(PlayerColor, Move, Strategy) :-
     
     % Print stats
     user:compteur_noeuds(N),
-    format('Nodes explored: ~w~n', [N]).
+    format(user_error, ' Nodes explored: ~w~n', [N]).
 
 % Fallback if something fails
 ia_choose_move(_, Move, _) :-
