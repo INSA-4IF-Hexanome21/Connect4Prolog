@@ -16,12 +16,12 @@ profondeur_recherche(12).
 
 % 7 bits par colonne (6 lignes + 1 bit “sentinelle”).
 % Ces valeurs correspondent à 7x6 avec sentinelle (bitboard standard).
-bottom_mask(4432676798593).
-board_mask(279258638311359).
+bottom_mask(4432676798593). % Masque des cases du bas (1 bit par colonne)  Utilisé pour simuler la gravité en O(1)
+board_mask(279258638311359). % Masque de toutes les cases jouables du plateau
 
-move_order([3, 2, 4, 1, 5, 0, 6]).
+move_order([3, 2, 4, 1, 5, 0, 6]). % Ordre des colonnes explorées (centre d’abord)
 
-mate_value(1000000).
+mate_value(1000000). % Valeur représentant une victoire certaine
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% CŒUR DU BITBOARD
@@ -102,7 +102,7 @@ is_winning(Pos) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% POPCOUNT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%Compte le nombre de bits à 1
 popcount(0, 0) :- !.
 popcount(N, C) :-
     N1 is N /\ (N - 1),
@@ -121,6 +121,7 @@ lines(Lines) :-
     retractall(lines_cache(_)),
     assertz(lines_cache(Lines)).
 
+% Génère tous les alignements possibles de 4
 line_mask(Mask) :-
     % Horizontal : dc=1 dr=0
     between(0, 3, C0),
@@ -142,6 +143,7 @@ line_mask(Mask) :-
     between(3, 5, R0),
     line_from(C0, R0, 1, -1, Mask).
 
+% Construit un masque de 4 bits alignés
 line_from(C0, R0, DC, DR, Mask) :-
     bit_at(C0, R0, B0),
     C1 is C0 + DC,
@@ -197,6 +199,9 @@ line_weight(2, 8).
 line_weight(3, 60).
 line_weight(4, 0).
 
+% Évalue la position en parcourant toutes les lignes de 4
+% - bonus pour nos lignes ouvertes
+% - malus pour celles de l’adversaire
 open_lines_score(Pos, OppPos, Score) :-
     lines(Lines),
     open_lines_score_(Lines, Pos, OppPos, 0, Score).
@@ -205,12 +210,14 @@ open_lines_score_([], _, _, Acc, Acc).
 open_lines_score_([L | Rest], Pos, OppPos, Acc, Score) :-
     MyIn is L /\ Pos,
     OpIn is L /\ OppPos,
+    % Ligne non bloquée par l’adversaire => bonus
     (   OpIn =:= 0
     ->  popcount(MyIn, N),
         line_weight(N, W),
         Acc1 is Acc + W
     ;   Acc1 = Acc
     ),
+    % Ligne non bloquée par nous => malus
     (   MyIn =:= 0
     ->  popcount(OpIn, N2),
         line_weight(N2, W2),
