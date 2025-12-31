@@ -5,7 +5,9 @@
 :- use_module(library(random)).
 :- use_module(library(lists)).
 
-% ====== GAME ENGINE ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----    GAME ENGINE   --------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- consult('features/ia/ai.pl').
 :- consult('features/affichage/affichage.pl').
 :- consult('features/coup/coup.pl').
@@ -15,19 +17,25 @@
 :- consult('features/joueur/joueur.pl').
 :- consult('features/ia/ai_optimized.pl').
 
-% ====== DYNAMIC STATE ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----    DYNAMIC STATE   ------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- dynamic column/3.
 :- dynamic currentPlayer/1.
 :- dynamic playerR/2.
 :- dynamic playerJ/2.
 
-% ====== SERVER ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----     SERVER    -----------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 start_server :-
     http_server(http_dispatch, [port(8080)]),
     writeln('% Server running on http://localhost:8080'),
     thread_get_message(_).
 
-% ====== STATIC FILES ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----     STATIC FILES   ------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- http_handler(root(.), serve_static, [prefix]).
 serve_static(Req) :-
     member(path(Path), Req),
@@ -38,7 +46,9 @@ serve_static(Req) :-
 :- http_handler(root('favicon.ico'), serve_favicon, []).
 serve_favicon(_) :- format('Content-type: image/x-icon~n~n').
 
-% ====== API ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----     API   ---------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 :- http_handler(root(api/init_game), h_init_game, [methods([post])]).
 h_init_game(Request) :-
     catch(
@@ -162,7 +172,9 @@ h_ia_move(_Request) :-
         )
     ).
 
-% ====== GAME LOGIC ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----     GAME LOGIC   --------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 init_board_api :-
     retractall(column(_,_,_)),
     forall(between(1,7,C),
@@ -194,7 +206,9 @@ valid_column(Col) :-
     column(Col, _, Filled),
     Filled < 6.
 
-% ====== IA ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----     IA   ----------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ia_choose_move(Type, Color, Move) :-
     format(user_error, 'DEBUG: ia_choose_move called with Type=~w, Color=~w~n', [Type, Color]),
     % Convertir le Type en atom si c'est une string
@@ -259,7 +273,9 @@ call_ai(Type, Color, _) :-
     format(user_error, 'ERROR: Unknown AI type: ~w for color ~w~n', [Type, Color]),
     fail.
 
-% ====== BOARD JSON ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% -----     BOARD JSON   --------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 get_board_json(Board) :-
     findall(ColData, (between(1,7,I), column(I, ColData, _)), Cols),
     maplist(reverse, Cols, RevCols),
