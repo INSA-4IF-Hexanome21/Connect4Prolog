@@ -1,7 +1,7 @@
 :- module(ai, [ia_choose_move/3]).
 :- use_module(library(lists)).
 
-% Load all AI implementations aliased to avoid name conflicts
+% Chargement de toutes les ia implémentées sous des alias pour éviter des conflits de noms
 :- use_module('negamax_base', [resolve/3 as solve_base]).
 :- use_module('negamax_ord',  [resolve/3 as solve_ord]).
 :- use_module('negamax_tt',   [resolve/3 as solve_tt]).
@@ -11,11 +11,11 @@
 %%%% -----   ADAPTER / BRIDGE   --------------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Retrieve column data from the Main 'user' module
+% Récupération des datas de column à partir du Main 'user' module
 get_column_from_main(NumCol, Data) :-
     user:column(NumCol, Data, _).
 
-% Convert Main Board format (e, RED, YELLOW) -> AI format (x, o)
+% Convertir Main Board format (e, RED, YELLOW) -> AI format (x, o)
 convert_board(BoardAI) :-
     findall(CleanCol,
             (between(1, 7, ColNum),
@@ -42,11 +42,11 @@ ia_choose_move(PlayerColor, Move, Strategy) :-
     convert_token(PlayerColor, TokenAI),
     convert_board(Board),
     
-    % Statistics initialization
+    % Initialisation des statistiques
     (current_predicate(user:compteur_noeuds/1) -> retractall(user:compteur_noeuds(_)); true),
     assertz(user:compteur_noeuds(0)),
 
-    % Route to the specific implementation
+    % Routage vers l'implémentation spécifique
     (   Strategy == base -> solve_base(Board, TokenAI, Scores)
     ;   Strategy == ord  -> solve_ord(Board, TokenAI, Scores)
     ;   Strategy == tt   -> solve_tt(Board, TokenAI, Scores)
@@ -54,15 +54,15 @@ ia_choose_move(PlayerColor, Move, Strategy) :-
     ;   writeln('Unknown strategy, defaulting to BASE'), solve_base(Board, TokenAI, Scores)
     ),
 
-    % Select the best move from the scores
+    % On choisi le meilleur mouvement des scores
     %write('Scores: '), writeln(Scores),
     find_best_index(Scores, Move),
     
-    % Print stats
+    % Afficher les stats
     user:compteur_noeuds(N),
     format(user_error, ' Nodes explored: ~w~n', [N]).
 
-% Fallback if something fails
+% Safeback si une erreur se produit
 ia_choose_move(_, Move, _) :-
     writeln('AI Error: Playing Random.'),
     random_between(1, 7, Move).
