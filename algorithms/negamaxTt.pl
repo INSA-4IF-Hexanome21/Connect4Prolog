@@ -3,7 +3,7 @@
 
 :- dynamic tt_entry/4. % Hash, Depth, Flag (exact, lower, upper), Value
 
-max_depth(7). % Can go deeper with TT
+max_depth(7). % On oeut aller plus en profondeur avec TT
 
 clean_tt :- retractall(tt_entry(_,_,_,_)).
 
@@ -23,7 +23,7 @@ negamax_tt(Board, Token, Depth, Alpha, Beta, Score) :-
         ; Flag = upper, Val =< Alpha -> Score = Val
         ; fail)
     ->  true
-    ;   % 2. Calculate
+    ;   % 2. On calcule
         negamax_calc(Board, Token, Depth, Alpha, Beta, Score, Hash)
     ).
 
@@ -57,13 +57,13 @@ process_moves([Col|Rest], Board, Token, Adv, Depth, Alpha, Beta, CurrentBest, Sc
     ;   process_moves(Rest, Board, Token, Adv, Depth, Alpha, Beta, CurrentBest, Score)
     ).
 
-% Entry point for Bridge
+% Point d'entrée pour le Bridge
 resolve(Board, Token, Scores) :-
     clean_tt,
     max_depth(D),
     solve_internal(Board, Token, D, Scores).
 
-% Entry point for ID
+% Point d'entrée pour l'ID
 solve_internal(Board, Token, Depth, Scores) :-
     negamax_base:width_board(W),
     findall(Score,
