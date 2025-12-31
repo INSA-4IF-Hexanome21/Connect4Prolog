@@ -1,12 +1,12 @@
 :- module(negamax_ord, [resolve/3]).
-:- use_module(negamax_base). % Reuse basic logic (win checks, etc)
+:- use_module(negamax_base). % Réutilisation de la logique basique (win checks, etc)
 
-% We redefine what we need to change
+% On redéfinit ce que l'on doit changer
 
-% Standard depth
+% Profondeur standard
 max_depth(5). 
 
-% OPTIMIZATION: Center First
+% OPTIMISATION: le centre d'abbord
 col_order([3, 2, 4, 1, 5, 0, 6]).
 
 possible_moves_ord(Board, Moves) :-
@@ -14,7 +14,7 @@ possible_moves_ord(Board, Moves) :-
     col_order(Order),
     findall(C, (member(C, Order), C < W, nth0(C, Board, Col), negamax_base:playable_col(Col, H)), Moves).
 
-% Optimized Negamax
+% Negamax optimisé
 negamax_ord(Board, Token, Depth, Alpha, Beta, Score) :-
     negamax_base:increment_nodes,
     possible_moves_ord(Board, Moves),
