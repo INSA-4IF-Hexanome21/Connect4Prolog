@@ -1,3 +1,4 @@
+% Fonction pour changer le joueur en cours
 nextPlayer :-
     currentPlayer(Current),
     (   playerJ(ColorJ, TypeJ), Current = player(ColorJ, TypeJ) -> 
