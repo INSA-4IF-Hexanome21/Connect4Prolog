@@ -5,6 +5,7 @@
 %%%% ---------------   CAS DE TEST   --------------------- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%Test de l'IA random
 testAiV1() :- 
     % Création du tableau
     assert(column(1,['r','r','r','j','r','r'],6)),
@@ -17,6 +18,7 @@ testAiV1() :-
     aiV1(Move,_),
     Move == 6.
 
+%Test de l'IA V2
 testAiV2() :- 
     testAiV2Col(),
     testAiV2Row(),
@@ -26,6 +28,7 @@ testAiV2() :-
     testAiV2Diag3(),
     testAiV2Diag4().
 
+%Vérifie que si 3 jetons sont alignés en colonne alors l'IA va jouer ce coup
 testAiV2Col() :- 
     retractall(column(_,_,_)),
     % Création du tableau
@@ -39,6 +42,7 @@ testAiV2Col() :-
     aiV2(Move,_),
     Move == 1.
 
+%Vérifie que si 3 jetons sont alignés en ligne alors l'IA va jouer ce coup (dans le cas où le jeton à placer est en fin de ligne)
 testAiV2Row() :- 
     retractall(column(_,_,_)),
     % Création du tableau
@@ -52,6 +56,7 @@ testAiV2Row() :-
     aiV2(Move,_),
     Move == 6.
 
+%Vérifie que si 3 jetons sont alignés en ligne alors l'IA va jouer ce coup (dans le cas où le jeton à placer est au centre de la ligne)
 testAiV2Row2() :- 
     retractall(column(_,_,_)),
     % Création du tableau
@@ -65,6 +70,7 @@ testAiV2Row2() :-
     aiV2(Move,_),
     Move == 6.
 
+%Vérifie que si 3 jetons sont alignés en diagonale alors l'IA va jouer ce coup (dans le cas où le jeton à placer est en fin de diagonnale)
 testAiV2Diag() :- 
     retractall(column(_,_,_)),
     % Création du tableau
@@ -78,6 +84,8 @@ testAiV2Diag() :-
     aiV2(Move,_),
     Move == 4.
 
+%Vérifie que si 3 jetons sont alignés en diagonnale alors l'IA va jouer ce coup (dans le cas où le jeton à placer est en fin de diagonnale)
+%La diagonnale ici étant dans l'autre direction
 testAiV2Diag2() :- 
     retractall(column(_,_,_)),
     % Création du tableau
@@ -91,6 +99,7 @@ testAiV2Diag2() :-
     aiV2(Move,_),
     Move == 4.
 
+%Vérifie que si 3 jetons sont alignés en diagonnale alors l'IA va jouer ce coup (dans le cas où le jeton à placer est au centre de la diagonnale)
 testAiV2Diag3() :- 
     retractall(column(_,_,_)),
     % Création du tableau
@@ -104,6 +113,8 @@ testAiV2Diag3() :-
     aiV2(Move,_),
     Move == 3.
 
+%Vérifie que si 3 jetons sont alignés en diagonnale alors l'IA va jouer ce coup (dans le cas où le jeton à placer est au centre de la diagonnale)
+%La diagonnale ici étant dans l'autre direction
 testAiV2Diag4() :- 
     retractall(column(_,_,_)),
     % Création du tableau

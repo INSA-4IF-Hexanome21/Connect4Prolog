@@ -1,10 +1,17 @@
+% IA de deuxième génération
+% Elle vérifie en priorité si 3 jetons sont alignés pour jouer le 4e (ou bloquer son adversaire)
 aiV2(Move,_) :-
+    %Vérifie si 3 jetons sont aligné
     (
-        (verifCol(Move),!);
+        %En colonne
+        (verifCol(Move),!); 
+         %En ligne
         (verifRow(Move),!);
+        %En diagonnale
         (verifDiagLeft(Move),!);
         (verifDiagRight(Move),!)
     ;
+    %Si il n'y a pas d'alignement alors on utilise le random
     (   
     	repeat,
         random(1,8,Move),
@@ -15,14 +22,16 @@ aiV2(Move,_) :-
     ),
     format(user_error, "AI V2 Play : ~w~n",[Move]).
 
+%Fonction permettant de vérifier si 3 jetons sont alignés sur une colonne
 verifCol(Move) :- between(1,7,Move),
         (
             column(Move,Col,LastPos),
-            LastPos > 2,
-            not(LastPos == 6),
+            LastPos > 2, 
+            not(LastPos == 6), %Vérifie que la colonne n'est pas remplie
             Index1 is LastPos,
             Index2 is LastPos - 1,
             Index3 is LastPos - 2,
+            %On vérifie si les 3 jetons en dessous de la case vides sont identiques
             nth1(Index1,Col,Val),
             nth1(Index2,Col,Val),
             nth1(Index3,Col,Val),
@@ -43,7 +52,7 @@ canPlay(Col, Row) :-
     column(Col,_,LastPos). 
 
 
-% Recherche du coup gagnant en diagonale ↗
+% Recherche du coup gagnant en ligne
 verifRow(Move) :-
     
     between(1,6,Row),
